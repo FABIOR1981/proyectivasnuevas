@@ -396,7 +396,7 @@
     }
     function setHouseTool(t) { houseTool = t; }
 
-    // --- CONSTELACIÓN FAMILIAR (CON POSICIONAMIENTO ABSOLUTO FIJO PARA INFORME) ---
+    // --- CONSTELACIÓN FAMILIAR ---
     function addConstellationItem(label, isCircle) {
         const ws = document.getElementById('constellation-workspace');
         const div = document.createElement('div');
@@ -419,7 +419,6 @@
                 
                 div.style.left = `${finalX}px`;
                 div.style.top = `${finalY}px`;
-                // Guardar coordenadas explícitamente en atributos de estilo inline para el reporte
                 div.setAttribute('data-x', finalX);
                 div.setAttribute('data-y', finalY);
             }
@@ -560,7 +559,7 @@
         mazeCanvas.onmouseleave = () => { isDrawingMaze = false; };
     }
 
-    // --- GUARDADO Y REPORTE (CON CONVERSIÓN FIJA DE CONSTELACIÓN A HTML ESTILIZADO EN LÍNEA) ---
+    // --- GUARDADO Y REPORTE (CONVERSIÓN DE CONSTELACIÓN A CANVAS / IMAGEN RASTERIZADA) ---
     function saveTestResult(type) {
         let duration = Math.round((Date.now() - startTime) / 1000);
         
@@ -568,22 +567,48 @@
             testData.house = { img: houseCanvas.toDataURL(), time: duration };
         } else if (type === 'constellation') {
             let ws = document.getElementById('constellation-workspace');
-            // Procesar cada elemento hijo para incrustar su posición top y left directamente como estilo inline
             let items = ws.querySelectorAll('.placed-item');
-            let processedHtml = '';
+            
+            // Crear un canvas temporal para renderizar la constelación exactamente como una imagen PNG
+            let tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 750;
+            tempCanvas.height = 420;
+            let tCtx = tempCanvas.getContext('2d');
+            
+            // Fondo blanco
+            tCtx.fillStyle = '#FFFFFF';
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Dibujar cada elemento en su posición exacta sobre el canvas
             items.forEach(item => {
-                let x = item.getAttribute('data-x') || 40;
-                let y = item.getAttribute('data-y') || 40;
+                let x = parseInt(item.getAttribute('data-x') || 40);
+                let y = parseInt(item.getAttribute('data-y') || 40);
                 let isCircle = item.classList.contains('circle');
-                let bg = isCircle ? '#2c3e50' : '#3498db';
-                let borderRadius = isCircle ? '50%' : '6px';
-                let width = isCircle ? '45px' : 'auto';
-                let height = isCircle ? '45px' : 'auto';
-                let padding = isCircle ? '0' : '8px 12px';
+                let text = item.innerText;
                 
-                processedHtml += `<div style="position: absolute; left: ${x}px; top: ${y}px; background: ${bg}; color: white; padding: ${padding}; border-radius: ${borderRadius}; width: ${width}; height: ${height}; font-size: 0.8rem; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">${item.innerText}</div>`;
+                tCtx.fillStyle = isCircle ? '#2c3e50' : '#3498db';
+                
+                if(isCircle) {
+                    tCtx.beginPath();
+                    tCtx.arc(x + 22, y + 22, 22, 0, Math.PI * 2);
+                    tCtx.fill();
+                    tCtx.fillStyle = '#FFFFFF';
+                    tCtx.font = 'bold 9px sans-serif';
+                    tCtx.textAlign = 'center';
+                    tCtx.textBaseline = 'middle';
+                    // Dibujar texto ajustado
+                    tCtx.fillText(text, x + 22, y + 22);
+                } else {
+                    tCtx.fillRect(x, y, 110, 36);
+                    tCtx.fillStyle = '#FFFFFF';
+                    tCtx.font = 'bold 10px sans-serif';
+                    tCtx.textAlign = 'center';
+                    tCtx.textBaseline = 'middle';
+                    tCtx.fillText(text, x + 55, y + 18);
+                }
             });
-            testData.constellation = { html: processedHtml, time: duration };
+            
+            testData.constellation = { img: tempCanvas.toDataURL(), time: duration };
         } else if (type === 'color') {
             testData.color = { img: colorCanvas.toDataURL(), time: duration };
         } else if (type === 'maze') {
@@ -616,9 +641,7 @@
                 <div style="margin-bottom: 30px;">
                     <h4>2. Constelación Familiar / Vincular</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.constellation.time} segundos</p>
-                    <div style="border:1px solid #ced4da; position:relative; width:750px; height:420px; background:#fff; border-radius:6px; overflow:hidden;">
-                        ${testData.constellation.html}
-                    </div>
+                    <img src="${testData.constellation.img}" class="img-result">
                 </div>`;
         }
         if(testData.color) {
