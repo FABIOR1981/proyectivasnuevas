@@ -140,8 +140,8 @@
         .palette-item:hover { background: #2980b9; }
         
         #constellation-workspace {
-            flex-grow: 1;
-            height: 450px;
+            width: 750px;
+            height: 420px;
             border: 2px dashed var(--border);
             position: relative;
             background: #fff;
@@ -159,6 +159,7 @@
             font-size: 0.8rem;
             font-weight: bold;
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 10;
         }
         .placed-item.circle { border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
 
@@ -274,7 +275,9 @@
                 <div class="palette-item" onclick="addConstellationItem('Refugio / Meta', false)">+ Refugio / Meta</div>
                 <button class="secondary" style="width:100%; margin-top:15px; font-size:0.8rem;" onclick="clearConstellation()">Limpiar Plano</button>
             </div>
-            <div id="constellation-workspace"></div>
+            <div class="canvas-container">
+                <div id="constellation-workspace"></div>
+            </div>
         </div>
         <div class="actions-bar" style="margin-top:15px;">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
@@ -393,14 +396,14 @@
     }
     function setHouseTool(t) { houseTool = t; }
 
-    // --- CONSTELACIÓN FAMILIAR ---
+    // --- CONSTELACIÓN FAMILIAR (CON POSICIONAMIENTO ABSOLUTO FIJO PARA INFORME) ---
     function addConstellationItem(label, isCircle) {
         const ws = document.getElementById('constellation-workspace');
         const div = document.createElement('div');
         div.className = isCircle ? 'placed-item circle' : 'placed-item';
         div.innerText = label;
-        div.style.top = '20px';
-        div.style.left = '20px';
+        div.style.top = '40px';
+        div.style.left = '40px';
         
         let ox, oy;
         div.onmousedown = (e) => {
@@ -411,8 +414,14 @@
             function onMouseMove(em) {
                 let x = em.clientX - rect.left - ox;
                 let y = em.clientY - rect.top - oy;
-                div.style.left = `${Math.max(0, Math.min(rect.width - div.offsetWidth, x))}px`;
-                div.style.top = `${Math.max(0, Math.min(rect.height - div.offsetHeight, y))}px`;
+                let finalX = Math.max(0, Math.min(rect.width - div.offsetWidth, x));
+                let finalY = Math.max(0, Math.min(rect.height - div.offsetHeight, y));
+                
+                div.style.left = `${finalX}px`;
+                div.style.top = `${finalY}px`;
+                // Guardar coordenadas explícitamente en atributos de estilo inline para el reporte
+                div.setAttribute('data-x', finalX);
+                div.setAttribute('data-y', finalY);
             }
             function onMouseUp() {
                 window.removeEventListener('mousemove', onMouseMove);
@@ -421,6 +430,8 @@
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         };
+        div.setAttribute('data-x', 40);
+        div.setAttribute('data-y', 40);
         ws.appendChild(div);
     }
     function clearConstellation() {
@@ -447,9 +458,8 @@
         colorCtx.fill();
     }
 
-    // --- LABERINTO REAL ESTRUCTURAL (ALGORITMO DE GRILLA PARA ADULTOS) ---
+    // --- LABERINTO REAL ESTRUCTURAL ---
     let mazeCanvas, mazeCtx, isDrawingMaze = false;
-    let mazeGrid = [];
     const cols = 25;
     const rows = 14;
     let cellW, cellH;
@@ -462,8 +472,7 @@
         cellW = mazeCanvas.width / cols;
         cellH = mazeCanvas.height / rows;
 
-        // Inicializar celdas con todas las paredes presentes (arriba, derecha, abajo, izquierda)
-        mazeGrid = [];
+        let mazeGrid = [];
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
                 mazeGrid.push({
@@ -474,7 +483,6 @@
             }
         }
 
-        // Generación de laberinto perfecto mediante DFS (Depth-First Search) iterativo
         let stack = [];
         let current = mazeGrid[0];
         current.visited = true;
@@ -492,7 +500,6 @@
             return neighbors;
         }
 
-        // Bucle de construcción algorítmica
         let unvisitedCount = rows * cols - 1;
         while(unvisitedCount > 0) {
             let neighbors = getUnvisitedNeighbors(current);
@@ -501,7 +508,6 @@
                 let next = nextObj.cell;
                 stack.push(current);
 
-                // Romper paredes entre current y next
                 if(nextObj.dir === 'top') { current.walls.top = false; next.walls.bottom = false; }
                 if(nextObj.dir === 'right') { current.walls.right = false; next.walls.left = false; }
                 if(nextObj.dir === 'bottom') { current.walls.bottom = false; next.walls.top = false; }
@@ -517,14 +523,12 @@
             }
         }
 
-        // Abrir un par de paredes extra para generar caminos alternativos complejos (cruces)
         for(let i = 0; i < 15; i++) {
             let randCell = mazeGrid[Math.floor(Math.random() * mazeGrid.length)];
             if(randCell.walls.right) randCell.walls.right = false;
             if(randCell.walls.bottom) randCell.walls.bottom = false;
         }
 
-        // Dibujar el laberinto en el Canvas
         mazeCtx.strokeStyle = '#2c3e50';
         mazeCtx.lineWidth = 2.5;
 
@@ -538,15 +542,12 @@
             if(cell.walls.left) { mazeCtx.beginPath(); mazeCtx.moveTo(x, y); mazeCtx.lineTo(x, y + cellH); mazeCtx.stroke(); }
         });
 
-        // Casilla de Entrada (Verde - Esquina superior izquierda)
         mazeCtx.fillStyle = '#27ae60';
         mazeCtx.fillRect(cellW * 0.15, cellH * 0.15, cellW * 0.7, cellH * 0.7);
 
-        // Casilla de Salida (Roja - Esquina inferior derecha)
         mazeCtx.fillStyle = '#c0392b';
         mazeCtx.fillRect(cellW * (cols-1) + cellW * 0.15, cellH * (rows-1) + cellH * 0.15, cellW * 0.7, cellH * 0.7);
 
-        // Configurar eventos de trazado del usuario
         mazeCanvas.onmousedown = (e) => { isDrawingMaze = true; mazeCtx.beginPath(); mazeCtx.moveTo(e.offsetX, e.offsetY); };
         mazeCanvas.onmousemove = (e) => {
             if(!isDrawingMaze) return;
@@ -559,7 +560,7 @@
         mazeCanvas.onmouseleave = () => { isDrawingMaze = false; };
     }
 
-    // --- GUARDADO Y REPORTE ---
+    // --- GUARDADO Y REPORTE (CON CONVERSIÓN FIJA DE CONSTELACIÓN A HTML ESTILIZADO EN LÍNEA) ---
     function saveTestResult(type) {
         let duration = Math.round((Date.now() - startTime) / 1000);
         
@@ -567,7 +568,22 @@
             testData.house = { img: houseCanvas.toDataURL(), time: duration };
         } else if (type === 'constellation') {
             let ws = document.getElementById('constellation-workspace');
-            testData.constellation = { html: ws.innerHTML, time: duration };
+            // Procesar cada elemento hijo para incrustar su posición top y left directamente como estilo inline
+            let items = ws.querySelectorAll('.placed-item');
+            let processedHtml = '';
+            items.forEach(item => {
+                let x = item.getAttribute('data-x') || 40;
+                let y = item.getAttribute('data-y') || 40;
+                let isCircle = item.classList.contains('circle');
+                let bg = isCircle ? '#2c3e50' : '#3498db';
+                let borderRadius = isCircle ? '50%' : '6px';
+                let width = isCircle ? '45px' : 'auto';
+                let height = isCircle ? '45px' : 'auto';
+                let padding = isCircle ? '0' : '8px 12px';
+                
+                processedHtml += `<div style="position: absolute; left: ${x}px; top: ${y}px; background: ${bg}; color: white; padding: ${padding}; border-radius: ${borderRadius}; width: ${width}; height: ${height}; font-size: 0.8rem; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">${item.innerText}</div>`;
+            });
+            testData.constellation = { html: processedHtml, time: duration };
         } else if (type === 'color') {
             testData.color = { img: colorCanvas.toDataURL(), time: duration };
         } else if (type === 'maze') {
@@ -600,7 +616,7 @@
                 <div style="margin-bottom: 30px;">
                     <h4>2. Constelación Familiar / Vincular</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.constellation.time} segundos</p>
-                    <div style="border:1px solid #ced4da; padding:15px; position:relative; height:400px; background:#fff; border-radius:6px; overflow:hidden;">
+                    <div style="border:1px solid #ced4da; position:relative; width:750px; height:420px; background:#fff; border-radius:6px; overflow:hidden;">
                         ${testData.constellation.html}
                     </div>
                 </div>`;
