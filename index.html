@@ -39,7 +39,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             background: var(--surface);
             padding: 30px;
@@ -47,23 +47,11 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        /* Pantallas / Secciones */
-        .screen {
-            display: none;
-        }
-        .screen.active {
-            display: block;
-        }
+        .screen { display: none; }
+        .screen.active { display: block; }
 
-        /* Formularios y controles */
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; }
         input, select {
             width: 100%;
             padding: 10px;
@@ -84,17 +72,10 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button.secondary {
-            background-color: #95a5a6;
-        }
-        button.secondary:hover {
-            background-color: #7f8c8d;
-        }
+        button:hover { background-color: #2980b9; }
+        button.secondary { background-color: #95a5a6; }
+        button.secondary:hover { background-color: #7f8c8d; }
 
-        /* Menú de selección de pruebas */
         .test-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -114,20 +95,15 @@
             background-color: #f1f8ff;
         }
 
-        /* Área de Pruebas (Canvas y herramientas) */
         .canvas-container {
             border: 2px solid var(--primary);
             background: #fff;
             border-radius: 8px;
             position: relative;
-            overflow: hidden;
-            margin-bottom: 15px;
             display: inline-block;
+            overflow: hidden;
         }
-        canvas {
-            display: block;
-            cursor: crosshair;
-        }
+        canvas { display: block; cursor: crosshair; }
 
         .toolbar {
             display: flex;
@@ -136,51 +112,56 @@
             align-items: center;
             flex-wrap: wrap;
         }
+        .toolbar label { margin: 0; font-size: 0.9rem; }
 
-        .toolbar label {
-            margin: 0;
-            font-size: 0.9rem;
+        /* Espacio de Constelación mejorado con paleta de elementos */
+        .constellation-layout {
+            display: flex;
+            gap: 15px;
         }
-
-        /* Estilos específicos para Constelaciones (elementos arrastrables) */
+        .constellation-palette {
+            width: 200px;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 8px;
+            background: #fdfdfd;
+        }
+        .palette-item {
+            background: var(--secondary);
+            color: white;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .palette-item:hover { background: #2980b9; }
+        
         #constellation-workspace {
-            width: 100%;
+            flex-grow: 1;
             height: 450px;
             border: 2px dashed var(--border);
             position: relative;
             background: #fff;
             border-radius: 8px;
-            margin-bottom: 15px;
             overflow: hidden;
         }
-        .draggable-item {
+        .placed-item {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            background: var(--secondary);
+            padding: 8px 12px;
+            background: var(--primary);
             color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            cursor: grab;
+            border-radius: 6px;
+            cursor: move;
             user-select: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            text-align: center;
-            font-size: 0.75rem;
-            padding: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
-        .draggable-item:active {
-            cursor: grabbing;
-        }
-        .draggable-item.square {
-            border-radius: 8px;
-            width: 70px;
-            height: 50px;
-        }
+        .placed-item.circle { border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
 
-        /* Vista de Informe */
         .report-preview {
             border: 1px solid var(--border);
             padding: 20px;
@@ -198,8 +179,8 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             margin-top: 10px;
+            background: #fff;
         }
-
         .actions-bar {
             display: flex;
             justify-content: space-between;
@@ -211,8 +192,8 @@
 
 <div class="container">
     <header>
-        <h1>Suite Proyectiva Digital</h1>
-        <p class="subtitle">Herramienta clínica de apoyo al psicodiagnóstico gráfico y conductual</p>
+        <h1>Suite Proyectiva Digital - Clínica</h1>
+        <p class="subtitle">Módulo de Evaluación y Producción Gráfica para Adultos</p>
     </header>
 
     <!-- Pantalla 1: Datos del Paciente -->
@@ -220,15 +201,15 @@
         <h2>1. Datos del Evaluado</h2>
         <div class="form-group">
             <label for="p-name">Nombre y Apellido:</label>
-            <input type="text" id="p-name" placeholder="Ej. Juan Pérez">
+            <input type="text" id="p-name" placeholder="Ej. María Gómez">
         </div>
         <div class="form-group">
             <label for="p-id">Documento / ID:</label>
-            <input type="text" id="p-id" placeholder="Ej. 1.234.567-8">
+            <input type="text" id="p-id" placeholder="Ej. 4.567.890-1">
         </div>
         <div class="form-group">
             <label for="p-age">Edad:</label>
-            <input type="number" id="p-age" placeholder="Ej. 32">
+            <input type="number" id="p-age" placeholder="Ej. 42">
         </div>
         <button onclick="startEvaluation()">Comenzar Evaluaciones</button>
     </div>
@@ -243,36 +224,35 @@
                 <p>Dibujo libre del espacio habitable</p>
             </div>
             <div class="test-card" onclick="loadTest('constellation')">
-                <h3>Constelación Vincular</h3>
-                <p>Disposición espacial de elementos simbólicos</p>
+                <h3>Constelación Familiar</h3>
+                <p>Disposición libre y múltiple de elementos vinculares</p>
             </div>
             <div class="test-card" onclick="loadTest('color')">
                 <h3>Dinámica Cromática</h3>
-                <p>Expresión afectiva y flujo de color</p>
+                <p>Expresión afectiva y flujo fluido</p>
             </div>
             <div class="test-card" onclick="loadTest('maze')">
-                <h3>Laberinto Estratégico</h3>
-                <p>Resolución de problemas y control de impulsos</p>
+                <h3>Laberinto Complejo (Adultos)</h3>
+                <p>Estrategia, planificación y tolerancia a la frustración</p>
             </div>
         </div>
         <br>
-        <button class="secondary" onclick="finishAll()">Finalizar y Ver Informe Clínico</button>
+        <button class="secondary" onclick="finishAll()">Finalizar y Generar Informe Clínico</button>
     </div>
 
-    <!-- Pantalla 3A: Test de la Casa (Dibujo Libre) -->
+    <!-- Pantalla 3A: Test de la Casa -->
     <div id="screen-house" class="screen">
         <h2>Test de la Casa (Espacio Habitable)</h2>
         <p>Consigna: <em>"Dibuje una casa o espacio habitable utilizando las herramientas provistas."</em></p>
-        
         <div class="toolbar">
             <button onclick="setHouseTool('pen')">Lápiz</button>
-            <button onclick="setHouseTool('brush')">Pincel grueso</button>
+            <button onclick="setHouseTool('brush')">Pincel</button>
             <button onclick="setHouseTool('eraser')">Goma</button>
             <label>Color: <input type="color" id="house-color" value="#000000" onchange="setHouseColor(this.value)"></label>
-            <button class="secondary" onclick="clearCanvas('houseCanvas', houseCtx)">Limpiar</button>
+            <button class="secondary" onclick="clearCanvas('houseCanvas', houseCtx, '#FFFFFF')">Limpiar</button>
         </div>
         <div class="canvas-container">
-            <canvas id="houseCanvas" width="700" height="400"></canvas>
+            <canvas id="houseCanvas" width="750" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
@@ -280,17 +260,23 @@
         </div>
     </div>
 
-    <!-- Pantalla 3B: Constelación Vincular -->
+    <!-- Pantalla 3B: Constelación Familiar (Elementos Múltiples) -->
     <div id="screen-constellation" class="screen">
-        <h2>Constelación Vincular</h2>
-        <p>Consigna: <em>"Organice los siguientes elementos en el espacio para representar una escena o vínculo."</em></p>
-        <div id="constellation-workspace">
-            <div class="draggable-item" style="top:20px; left:20px;" draggable="true">Figura A</div>
-            <div class="draggable-item" style="top:20px; left:90px;" draggable="true">Figura B</div>
-            <div class="draggable-item square" style="top:20px; left:160px;" draggable="true">Vínculo / Límite</div>
-            <div class="draggable-item" style="top:20px; left:240px;" draggable="true">Elemento Neutro</div>
+        <h2>Constelación Familiar / Vincular</h2>
+        <p>Consigna: <em>"Seleccione de la paleta los elementos que necesite y colóquelos en el plano para estructurar la escena."</em></p>
+        <div class="constellation-layout">
+            <div class="constellation-palette">
+                <p style="font-size:0.85rem; font-weight:bold; margin-top:0;">Haga clic para agregar:</p>
+                <div class="palette-item" onclick="addConstellationItem('Figura Principal', true)">+ Figura Principal</div>
+                <div class="palette-item" onclick="addConstellationItem('F. Vínculo Cercano', true)">+ Vínculo Cercano</div>
+                <div class="palette-item" onclick="addConstellationItem('F. Periférica', true)">+ Figura Periférica</div>
+                <div class="palette-item" onclick="addConstellationItem('Obstáculo / Barrera', false)">+ Obstáculo</div>
+                <div class="palette-item" onclick="addConstellationItem('Refugio / Meta', false)">+ Refugio / Meta</div>
+                <button class="secondary" style="width:100%; margin-top:15px; font-size:0.8rem;" onclick="clearConstellation()">Limpiar Plano</button>
+            </div>
+            <div id="constellation-workspace"></div>
         </div>
-        <div class="actions-bar">
+        <div class="actions-bar" style="margin-top:15px;">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
             <button onclick="saveTestResult('constellation')">Guardar y Continuar</button>
         </div>
@@ -300,15 +286,14 @@
     <div id="screen-color" class="screen">
         <h2>Dinámica Cromática y Expresión Emocional</h2>
         <p>Consigna: <em>"Exprese libremente un estado afectivo o vivencia mediante el color y el trazo fluido."</em></p>
-        
         <div class="toolbar">
-            <button onclick="setColorTool('fluid')">Trazo Fluido</button>
-            <button onclick="setColorTool('splash')">Mancha / Spray</button>
+            <button onclick="setColorTool('fluid')">Trazo Continuo</button>
+            <button onclick="setColorTool('splash')">Mancha / Textura</button>
             <label>Color: <input type="color" id="paint-color" value="#3498db" onchange="setPaintColor(this.value)"></label>
-            <button class="secondary" onclick="clearCanvas('colorCanvas', colorCtx)">Limpiar</button>
+            <button class="secondary" onclick="clearCanvas('colorCanvas', colorCtx, '#FFFFFF')">Limpiar</button>
         </div>
         <div class="canvas-container">
-            <canvas id="colorCanvas" width="700" height="400"></canvas>
+            <canvas id="colorCanvas" width="750" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
@@ -316,17 +301,16 @@
         </div>
     </div>
 
-    <!-- Pantalla 3D: Laberinto Estratégico -->
+    <!-- Pantalla 3D: Laberinto Complejo para Adultos -->
     <div id="screen-maze" class="screen">
-        <h2>Laberinto Estratégico (Control y Resolución)</h2>
-        <p>Consigna: <em>"Trace su recorrido desde la entrada (verde) hasta la salida (roja) intentando resolver el trayecto."</em></p>
-        
+        <h2>Laberinto Estratégico (Adultos)</h2>
+        <p>Consigna: <em>"Trace el recorrido desde la Entrada (Verde) hasta la Salida (Roja) superando las bifurcaciones."</em></p>
         <div class="toolbar">
-            <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="10" value="4"></label>
-            <button class="secondary" onclick="initMaze()">Reiniciar Trazado</button>
+            <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="8" value="3"></label>
+            <button class="secondary" onclick="initComplexMaze()">Reiniciar Trazado</button>
         </div>
         <div class="canvas-container">
-            <canvas id="mazeCanvas" width="700" height="400"></canvas>
+            <canvas id="mazeCanvas" width="750" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
@@ -343,12 +327,8 @@
                 <p><strong>Evaluado:</strong> <span id="rep-name"></span> | <strong>ID:</strong> <span id="rep-id"></span> | <strong>Edad:</strong> <span id="rep-age"></span></p>
                 <p><strong>Fecha de Evaluación:</strong> <span id="rep-date"></span></p>
             </div>
-            
-            <div id="rep-results-container">
-                <!-- Se inyectan dinámicamente los resultados -->
-            </div>
+            <div id="rep-results-container"></div>
         </div>
-        
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Volver al Menú</button>
             <button onclick="exportToWord()">Exportar Informe a Word (.doc)</button>
@@ -357,7 +337,6 @@
 </div>
 
 <script>
-    // Variables globales de sesión
     let patient = { name: '', id: '', age: '' };
     let testData = { house: null, constellation: null, color: null, maze: null };
     let startTime = 0;
@@ -366,12 +345,10 @@
         patient.name = document.getElementById('p-name').value || 'Anónimo';
         patient.id = document.getElementById('p-id').value || 'S/D';
         patient.age = document.getElementById('p-age').value || 'S/D';
-        
         if(!document.getElementById('p-name').value) {
             alert('Por favor ingrese al menos el nombre del paciente.');
             return;
         }
-        
         document.getElementById('lbl-patient-name').innerText = patient.name;
         switchScreen('screen-menu');
     }
@@ -385,114 +362,125 @@
         startTime = Date.now();
         switchScreen('screen-' + type);
         if(type === 'house') initHouseCanvas();
-        if(type === 'constellation') initConstellation();
+        if(type === 'constellation') clearConstellation();
         if(type === 'color') initColorCanvas();
-        if(type === 'maze') initMazeCanvas();
+        if(type === 'maze') initComplexMaze();
     }
 
-    function backToMenu() {
-        switchScreen('screen-menu');
-    }
-
-    // --- 1. CONFIGURACIÓN TEST DE LA CASA ---
-    let houseCanvas, houseCtx, isDrawingHouse = false;
-    let houseTool = 'pen';
-    function initHouseCanvas() {
-        houseCanvas = document.getElementById('houseCanvas');
-        houseCtx = houseCanvas.getContext('2d');
-        houseCtx.fillStyle = '#FFFFFF';
-        houseCtx.fillRect(0, 0, houseCanvas.width, houseCanvas.height);
-        
-        houseCanvas.onmousedown = startHouseDraw;
-        houseCanvas.onmousemove = drawHouse;
-        houseCanvas.onmouseup = stopHouseDraw;
-        houseCanvas.onmouseleave = stopHouseDraw;
-    }
-    function setHouseTool(tool) { houseTool = tool; }
-    function setHouseColor(color) { houseCtx.strokeStyle = color; }
-    function startHouseDraw(e) {
-        isDrawingHouse = true;
-        houseCtx.beginPath();
-        houseCtx.moveTo(e.offsetX, e.offsetY);
-    }
-    function drawHouse(e) {
-        if (!isDrawingHouse) return;
-        houseCtx.lineWidth = houseTool === 'brush' ? 12 : (houseTool === 'eraser' ? 20 : 3);
-        if (houseTool === 'eraser') {
-            houseCtx.strokeStyle = '#FFFFFF';
-        }
-        houseCtx.lineTo(e.offsetX, e.offsetY);
-        houseCtx.stroke();
-    }
-    function stopHouseDraw() { isDrawingHouse = false; }
-    function clearCanvas(canvasId, ctx) {
+    function backToMenu() { switchScreen('screen-menu'); }
+    function clearCanvas(canvasId, ctx, color) {
         const c = document.getElementById(canvasId);
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = color;
         ctx.fillRect(0, 0, c.width, c.height);
     }
 
-    // --- 2. CONFIGURACIÓN CONSTELACIÓN VINCULAR ---
-    function initConstellation() {
-        const workspace = document.getElementById('constellation-workspace');
-        const items = workspace.querySelectorAll('.draggable-item');
-        items.forEach(item => {
-            let offsetX, offsetY;
-            item.onmousedown = (e) => {
-                let rect = workspace.getBoundingClientRect();
-                offsetX = e.clientX - item.getBoundingClientRect().left;
-                offsetY = e.clientY - item.getBoundingClientRect().top;
-                
-                function onMouseMove(em) {
-                    let x = em.clientX - rect.left - offsetX;
-                    let y = em.clientY - rect.top - offsetY;
-                    item.style.left = `${Math.max(0, Math.min(rect.width - item.offsetWidth, x))}px`;
-                    item.style.top = `${Math.max(0, Math.min(rect.height - item.offsetHeight, y))}px`;
-                }
-                function onMouseUp() {
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                }
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-            };
-        });
+    // --- CASA ---
+    let houseCanvas, houseCtx, isDrawingHouse = false, houseTool = 'pen';
+    function initHouseCanvas() {
+        houseCanvas = document.getElementById('houseCanvas');
+        houseCtx = houseCanvas.getContext('2d');
+        clearCanvas('houseCanvas', houseCtx, '#FFFFFF');
+        houseCanvas.onmousedown = (e) => { isDrawingHouse = true; houseCtx.beginPath(); houseCtx.moveTo(e.offsetX, e.offsetY); };
+        houseCanvas.onmousemove = (e) => {
+            if(!isDrawingHouse) return;
+            houseCtx.lineWidth = houseTool === 'brush' ? 10 : (houseTool === 'eraser' ? 20 : 3);
+            houseCtx.strokeStyle = houseTool === 'eraser' ? '#FFFFFF' : document.getElementById('house-color').value;
+            houseCtx.lineTo(e.offsetX, e.offsetY);
+            houseCtx.stroke();
+        };
+        houseCanvas.onmouseup = () => { isDrawingHouse = false; };
+        houseCanvas.onmouseleave = () => { isDrawingHouse = false; };
+    }
+    function setHouseTool(t) { houseTool = t; }
+
+    // --- CONSTELACIÓN FAMILIAR (MULTIELEMENTO ARRASTRABLE) ---
+    function addConstellationItem(label, isCircle) {
+        const ws = document.getElementById('constellation-workspace');
+        const div = document.createElement('div');
+        div.className = isCircle ? 'placed-item circle' : 'placed-item';
+        div.innerText = label;
+        div.style.top = '20px';
+        div.style.left = '20px';
+        
+        let ox, oy;
+        div.onmousedown = (e) => {
+            let rect = ws.getBoundingClientRect();
+            ox = e.clientX - div.getBoundingClientRect().left;
+            oy = e.clientY - div.getBoundingClientRect().top;
+            
+            function onMouseMove(em) {
+                let x = em.clientX - rect.left - ox;
+                let y = em.clientY - rect.top - oy;
+                div.style.left = `${Math.max(0, Math.min(rect.width - div.offsetWidth, x))}px`;
+                div.style.top = `${Math.max(0, Math.min(rect.height - div.offsetHeight, y))}px`;
+            }
+            function onMouseUp() {
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+            }
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        };
+        ws.appendChild(div);
+    }
+    function clearConstellation() {
+        document.getElementById('constellation-workspace').innerHTML = '';
     }
 
-    // --- 3. CONFIGURACIÓN DINÁMICA CROMÁTICA ---
-    let colorCanvas, colorCtx, isDrawingColor = false;
-    let colorTool = 'fluid';
+    // --- DINÁMICA CROMÁTICA ---
+    let colorCanvas, colorCtx, isDrawingColor = false, colorTool = 'fluid';
     function initColorCanvas() {
         colorCanvas = document.getElementById('colorCanvas');
         colorCtx = colorCanvas.getContext('2d');
-        clearCanvas('colorCanvas', colorCtx);
-        
-        colorCanvas.onmousedown = startColorDraw;
-        colorCanvas.onmousemove = drawColorAction;
-        colorCanvas.onmouseup = stopColorDraw;
-        colorCanvas.onmouseleave = stopColorDraw;
+        clearCanvas('colorCanvas', colorCtx, '#FFFFFF');
+        colorCanvas.onmousedown = (e) => { isDrawingColor = true; drawColorAction(e); };
+        colorCanvas.onmousemove = (e) => { if(isDrawingColor) drawColorAction(e); };
+        colorCanvas.onmouseup = () => { isDrawingColor = false; };
+        colorCanvas.onmouseleave = () => { isDrawingColor = false; };
     }
-    function setColorTool(tool) { colorTool = tool; }
-    function setPaintColor(color) { colorCtx.fillStyle = color; colorCtx.strokeStyle = color; }
-    function startColorDraw(e) {
-        isDrawingColor = true;
-        drawColorAction(e);
-    }
+    function setColorTool(t) { colorTool = t; }
+    function setPaintColor(col) { colorCtx.fillStyle = col; colorCtx.strokeStyle = col; }
     function drawColorAction(e) {
-        if (!isDrawingColor) return;
         colorCtx.beginPath();
-        let size = colorTool === 'splash' ? 30 : 8;
+        let size = colorTool === 'splash' ? 25 : 6;
         colorCtx.arc(e.offsetX, e.offsetY, size, 0, Math.PI * 2);
         colorCtx.fill();
     }
-    function stopColorDraw() { isDrawingColor = false; }
 
-    // --- 4. CONFIGURACIÓN LABERINTO ESTRATÉGICO ---
+    // --- LABERINTO COMPLEJO ADULTOS ---
     let mazeCanvas, mazeCtx, isDrawingMaze = false;
-    function initMazeCanvas() {
+    function initComplexMaze() {
         mazeCanvas = document.getElementById('mazeCanvas');
         mazeCtx = mazeCanvas.getContext('2d');
-        initMaze();
+        clearCanvas('mazeCanvas', mazeCtx, '#FFFFFF');
         
+        // Dibujar estructura compleja para adultos
+        mazeCtx.strokeStyle = '#2c3e50';
+        mazeCtx.lineWidth = 3;
+        mazeCtx.strokeRect(15, 15, 720, 390);
+
+        // Múltiples paredes internas intrincadas
+        let walls = [
+            [70,15, 70,300], [140,100, 140,390], [210,15, 210,300],
+            [280,100, 280,390], [350,50, 350,350], [420,100, 420,390],
+            [490,15, 490,300], [560,80, 560,390], [640,15, 640,320],
+            // Conectores / obstáculos horizontales
+            [70,100, 140,100], [210,300, 280,300], [350,150, 490,150],
+            [140,250, 210,250], [420,280, 560,280], [280,70, 350,70]
+        ];
+        walls.forEach(w => {
+            mazeCtx.beginPath();
+            mazeCtx.moveTo(w[0], w[1]);
+            mazeCtx.lineTo(w[2], w[3]);
+            mazeCtx.stroke();
+        });
+
+        // Entrada y Salida
+        mazeCtx.fillStyle = '#27ae60';
+        mazeCtx.fillRect(20, 20, 35, 30); // Entrada
+        mazeCtx.fillStyle = '#c0392b';
+        mazeCtx.fillRect(695, 365, 35, 30); // Salida
+
         mazeCanvas.onmousedown = (e) => { isDrawingMaze = true; mazeCtx.beginPath(); mazeCtx.moveTo(e.offsetX, e.offsetY); };
         mazeCanvas.onmousemove = (e) => {
             if(!isDrawingMaze) return;
@@ -504,40 +492,18 @@
         mazeCanvas.onmouseup = () => { isDrawingMaze = false; };
         mazeCanvas.onmouseleave = () => { isDrawingMaze = false; };
     }
-    function initMaze() {
-        mazeCtx.fillStyle = '#FFFFFF';
-        mazeCtx.fillRect(0, 0, mazeCanvas.width, mazeCanvas.height);
-        // Dibujar un laberinto estático de ejemplo en el canvas
-        mazeCtx.strokeStyle = '#2c3e50';
-        mazeCtx.lineWidth = 4;
-        // Bordes externos
-        mazeCtx.strokeRect(20, 20, 660, 360);
-        // Paredes internas simuladas
-        mazeCtx.beginPath();
-        mazeCtx.moveTo(100, 20); mazeCtx.lineTo(100, 300);
-        mazeCtx.moveTo(200, 100); mazeCtx.lineTo(200, 380);
-        mazeCtx.moveTo(300, 20); mazeCtx.lineTo(300, 280);
-        mazeCtx.moveTo(400, 120); mazeCtx.lineTo(400, 360);
-        mazeCtx.moveTo(520, 20); mazeCtx.lineTo(520, 300);
-        mazeCtx.stroke();
-        // Indicadores de Entrada y Salida
-        mazeCtx.fillStyle = '#27ae60';
-        mazeCtx.fillRect(25, 25, 40, 30); // Entrada
-        mazeCtx.fillStyle = '#c0392b';
-        mazeCtx.fillRect(635, 335, 40, 30); // Salida
-    }
 
-    // --- GUARDADO Y GENERACIÓN DE INFORME ---
+    // --- GUARDADO Y REPORTE ---
     function saveTestResult(type) {
         let duration = Math.round((Date.now() - startTime) / 1000);
         
         if (type === 'house') {
             testData.house = { img: houseCanvas.toDataURL(), time: duration };
         } else if (type === 'constellation') {
-            // Capturar la posición visual de los elementos usando una foto auxiliar o clon visual
+            // Generar imagen simulada del contenedor usando HTML clonado con estilos absolutos incrustados
             let ws = document.getElementById('constellation-workspace');
-            // Como simple alternativa visual guardamos una representación del estado
-            testData.constellation = { html: ws.innerHTML, time: duration };
+            let cloneHtml = ws.innerHTML;
+            testData.constellation = { html: cloneHtml, time: duration };
         } else if (type === 'color') {
             testData.color = { img: colorCanvas.toDataURL(), time: duration };
         } else if (type === 'maze') {
@@ -559,7 +525,7 @@
 
         if(testData.house) {
             container.innerHTML += `
-                <div style="margin-bottom: 25px;">
+                <div style="margin-bottom: 30px;">
                     <h4>1. Test de la Casa (Espacio Habitable)</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.house.time} segundos</p>
                     <img src="${testData.house.img}" class="img-result">
@@ -567,17 +533,17 @@
         }
         if(testData.constellation) {
             container.innerHTML += `
-                <div style="margin-bottom: 25px;">
-                    <h4>2. Constelación Vincular</h4>
+                <div style="margin-bottom: 30px;">
+                    <h4>2. Constelación Familiar / Vincular</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.constellation.time} segundos</p>
-                    <div style="border:1px solid #ced4da; padding:10px; position:relative; height:350px; background:#fff; border-radius:6px;">
+                    <div style="border:1px solid #ced4da; padding:15px; position:relative; height:400px; background:#fff; border-radius:6px; overflow:hidden;">
                         ${testData.constellation.html}
                     </div>
                 </div>`;
         }
         if(testData.color) {
             container.innerHTML += `
-                <div style="margin-bottom: 25px;">
+                <div style="margin-bottom: 30px;">
                     <h4>3. Dinámica Cromática y Expresión Emocional</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.color.time} segundos</p>
                     <img src="${testData.color.img}" class="img-result">
@@ -585,8 +551,8 @@
         }
         if(testData.maze) {
             container.innerHTML += `
-                <div style="margin-bottom: 25px;">
-                    <h4>4. Laberinto Estratégico (Resolución)</h4>
+                <div style="margin-bottom: 30px;">
+                    <h4>4. Laberinto Estratégico Complejo (Adultos)</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.maze.time} segundos</p>
                     <img src="${testData.maze.img}" class="img-result">
                 </div>`;
