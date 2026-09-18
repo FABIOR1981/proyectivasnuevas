@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suite de Pruebas Proyectivas Nativas Digitales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .drag-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold tracking-wide text-indigo-400">PsyProject Digital Suite</h1>
+            <p class="text-xs text-slate-400">Entorno de Evaluación Proyectiva Nativa Digital (Uso Profesional)</p>
+        </div>
+        <div id="session-info" class="text-sm text-slate-300 hidden">
+            Paciente: <span id="lbl-patient" class="font-semibold text-white"></span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col">
+
+        <!-- 1. Patient Setup Screen -->
+        <section id="screen-setup" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl max-w-lg mx-auto my-auto w-full">
+            <h2 class="text-lg font-semibold mb-4 text-indigo-300 border-b border-slate-700 pb-2">Registro de Sesión de Evaluación</h2>
+            <form id="form-setup" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Nombre o Código del Evaluado:</label>
+                    <input type="text" id="input-name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="Ej. PAC-1042">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Nombre del Profesional / Evaluador:</label>
+                    <input type="text" id="input-evaluator" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="Ej. Lic. Pérez">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Seleccionar Prueba Proyectiva:</label>
+                    <select id="select-test" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                        <option value="house">1. Test del Espacio Habitable (Casa Digital)</option>
+                        <option value="constellation">2. Test de Constelación de Objetos Interactivos</option>
+                        <option value="chromatic">3. Test de Dinámica Cromática y Flujo Emocional</option>
+                        <option value="labyrinth">4. Test del Laberinto Generativo / Recorrido Vital</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition shadow-lg">Comenzar Evaluación</button>
+            </form>
+        </section>
+
+        <!-- 2. Test Execution Container (Hidden by default) -->
+        <section id="screen-test" class="flex-1 flex flex-col hidden">
+            <!-- Test Control Bar -->
+            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex justify-between items-center mb-4">
+                <div>
+                    <span id="test-title-display" class="font-bold text-indigo-300">Prueba</span>
+                    <span class="text-xs text-slate-400 block" id="test-instruction-display">Consigna...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm font-mono bg-slate-900 px-3 py-1 rounded border border-slate-700 text-amber-400">
+                        ⏱️ <span id="timer-display">00:00</span>
+                    </div>
+                    <button id="btn-finish" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow">Finalizar y Generar Informe</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Canvas Area -->
+            <div id="test-canvas-container" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl relative overflow-hidden flex flex-col items-center justify-center min-h-[500px]">
+                <!-- Dynamically injected test views will go here -->
+            </div>
+        </section>
+
+        <!-- 3. Report Output Screen (Hidden by default) -->
+        <section id="screen-report" class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl max-w-3xl mx-auto w-full hidden">
+            <h2 class="text-xl font-bold mb-4 text-emerald-400 border-b border-slate-700 pb-2">Informe Paramétrico y Resultados</h2>
+            
+            <div id="report-content" class="space-y-4 text-sm text-slate-300 bg-slate-900 p-5 rounded-lg border border-slate-700">
+                <!-- Populated via JS -->
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition">Nueva Evaluación</button>
+                <button id="btn-export-word" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition shadow-lg flex items-center gap-2">📥 Descargar Informe Completo (.doc)</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-800">
+        PsyProject Suite • Herramienta de Apoyo Clínico Profesional
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // State Management
+        let sessionData = {
+            patientName: '',
+            evaluatorName: '',
+            testType: '',
+            startTime: null,
+            endTime: null,
+            durationSeconds: 0,
+            metrics: {},
+            eventsLog: []
+        };
+
+        let timerInterval = null;
+        let secondsElapsed = 0;
+
+        // DOM Elements
+        const screenSetup = document.getElementById('screen-setup');
+        const screenTest = document.getElementById('screen-test');
+        const screenReport = document.getElementById('screen-report');
+        const formSetup = document.getElementById('form-setup');
+        const inputName = document.getElementById('input-name');
+        const inputEvaluator = document.getElementById('input-evaluator');
+        const selectTest = document.getElementById('select-test');
+        const lblPatient = document.getElementById('lbl-patient');
+        const sessionInfo = document.getElementById('session-info');
+        const testTitleDisplay = document.getElementById('test-title-display');
+        const testInstructionDisplay = document.getElementById('test-instruction-display');
+        const testCanvasContainer = document.getElementById('test-canvas-container');
+        const timerDisplay = document.getElementById('timer-display');
+        const btnFinish = document.getElementById('btn-finish');
+        const reportContent = document.getElementById('report-content');
+        const btnExportWord = document.getElementById('btn-export-word');
+
+        // Setup Form Event
+        formSetup.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sessionData.patientName = inputName.value.trim();
+            sessionData.evaluatorName = inputEvaluator.value.trim();
+            sessionData.testType = selectTest.value;
+            sessionData.startTime = new Date();
+
+            lblPatient.textContent = sessionData.patientName;
+            sessionInfo.classList.remove('hidden');
+
+            screenSetup.classList.add('hidden');
+            screenTest.classList.remove('hidden');
+
+            startTimer();
+            initSelectedTest(sessionData.testType);
+        });
+
+        function startTimer() {
+            secondsElapsed = 0;
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                let mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                let secs = (secondsElapsed % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            sessionData.durationSeconds = secondsElapsed;
+            sessionData.endTime = new Date();
+        }
+
+        // Test Selector router
+        function initSelectedTest(type) {
+            testCanvasContainer.innerHTML = '';
+            switch(type) {
+                case 'house':
+                    initHouseTest();
+                    break;
+                case 'constellation':
+                    initConstellationTest();
+                    break;
+                case 'chromatic':
+                    initChromaticTest();
+                    break;
+                case 'labyrinth':
+                    initLabyrinthTest();
+                    break;
+            }
+        }
+
+        // --- TEST 1: ESPACIO HABITABLE (Casa Digital Drag & Drop) ---
+        function initHouseTest() {
+            testTitleDisplay.textContent = "Test del Espacio Habitable (Casa Digital)";
+            testInstructionDisplay.textContent = "Arrastra elementos arquitectónicos para armar un espacio habitable que te represente.";
+
+            testCanvasContainer.innerHTML = `
+                <div class="w-full h-full flex flex-col md:flex-row">
+                    <div class="w-full md:w-1/4 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Elementos Disponibles</span>
+                        <div class="grid grid-cols-2 gap-2" id="palette-items">
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Muro/Pared">🧱 Muro</div>
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Puerta/Acceso">🚪 Puerta</div>
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Ventana">🪟 Ventana</div>
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Techo/Refugio">🏠 Techo</div>
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Mueble Central">🪑 Mueble</div>
+                            <div draggable="true" class="pal-item bg-slate-800 border border-slate-700 p-3 rounded text-center cursor-grab hover:border-indigo-500 text-xs font-semibold" data-type="Barrera/Cerca">🚧 Cerca</div>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-auto">Arrastra al plano de la derecha para estructurar tu construcción.</span>
+                    </div>
+                    <div id="drop-zone" class="flex-1 relative bg-slate-950 border-2 border-dashed border-slate-800 m-4 rounded-xl flex items-center justify-center overflow-hidden">
+                        <span id="drop-placeholder" class="text-slate-600 text-sm select-none">Área de proyección espacial</span>
+                    </div>
+                </div>
+            `;
+
+            sessionData.metrics.elementsPlaced = [];
+            let draggedType = null;
+
+            document.querySelectorAll('.pal-item').forEach(el => {
+                el.addEventListener('dragstart', (e) => {
+                    draggedType = e.target.getAttribute('data-type');
+                });
+            });
+
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.addEventListener('dragover', (e) => e.preventDefault());
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!draggedType) return;
+                
+                document.getElementById('drop-placeholder')?.remove();
+
+                const rect = dropZone.getBoundingClientRect();
+                const x = Math.round(e.clientX - rect.left);
+                const y = Math.round(e.clientY - rect.top);
+
+                const itemNode = document.createElement('div');
+                itemNode.className = 'absolute bg-indigo-900 border border-indigo-500 px-3 py-1.5 rounded text-xs text-indigo-100 shadow-md select-none cursor-pointer';
+                itemNode.style.left = `${x}px`;
+                itemNode.style.top = `${y}px`;
+                itemNode.textContent = draggedType;
+                
+                dropZone.appendChild(itemNode);
+
+                sessionData.metrics.elementsPlaced.push({
+                    type: draggedType,
+                    x: x,
+                    y: y,
+                    timestamp: secondsElapsed
+                });
+                
+                sessionData.eventsLog.push(`Colocó '${draggedType}' en coordenadas X:${x}, Y:${y} en segundo ${secondsElapsed}`);
+                draggedType = null;
+            });
+        }
+
+        // --- TEST 2: CONSTELACIÓN DE OBJETOS INTERACTIVOS ---
+        function initConstellationTest() {
+            testTitleDisplay.textContent = "Test de Constelación de Objetos Interactivos";
+            testInstructionDisplay.textContent = "Organiza las figuras simbólicas en el lienzo para representar una dinámica vincular o un conflicto y su resolución.";
+
+            testCanvasContainer.innerHTML = `
+                <div class="w-full h-full flex flex-col md:flex-row">
+                    <div class="w-full md:w-1/4 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-3">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Figuras Simbólicas</span>
+                        <div class="flex flex-col gap-2" id="palette-constellation">
+                            <button class="c-item bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 p-2 rounded text-xs text-left" data-fig="Figura Central Mayor">🔵 Figura Central (Mayor)</button>
+                            <button class="c-item bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 p-2 rounded text-xs text-left" data-fig="Figura Satélite">🟢 Figura Satélite</button>
+                            <button class="c-item bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 p-2 rounded text-xs text-left" data-fig="Obstáculo / Barrera">🔺 Elemento Obstáculo</button>
+                            <button class="c-item bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 text-indigo-100 p-2 rounded text-xs text-left" data-fig="Elemento Neutral">◼️ Forma Neutral</button>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-auto">Haz clic en una figura para añadirla al lienzo central y desplázala.</span>
+                    </div>
+                    <div id="const-canvas" class="flex-1 relative bg-slate-950 border border-slate-800 m-4 rounded-xl overflow-hidden flex items-center justify-center">
+                        <span id="const-placeholder" class="text-slate-600 text-sm select-none">Lienzo Vincular Interactivos</span>
+                    </div>
+                </div>
+            `;
+
+            sessionData.metrics.constellations = [];
+            const constCanvas = document.getElementById('const-canvas');
+
+            document.querySelectorAll('.c-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('const-placeholder')?.remove();
+                    const figName = btn.getAttribute('data-fig');
+                    
+                    const node = document.createElement('div');
+                    node.className = 'absolute bg-slate-800 border-2 border-indigo-500 px-4 py-2 rounded-lg text-xs font-medium text-white shadow-xl cursor-move select-none';
+                    node.style.left = `${Math.random() * 200 + 100}px`;
+                    node.style.top = `${Math.random() * 150 + 100}px`;
+                    node.textContent = figName;
+
+                    // Simple dragging logic inside canvas
+                    let isDragging = false;
+                    let offsetX, offsetY;
+
+                    node.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        offsetX = e.clientX - node.offsetLeft;
+                        offsetY = e.clientY - node.offsetTop;
+                        node.style.zIndex = 1000;
+                    });
+
+                    window.addEventListener('mousemove', (e) => {
+                        if (!isDragging) return;
+                        node.style.left = `${e.clientX - offsetX}px`;
+                        node.style.top = `${e.clientY - offsetY}px`;
+                    });
+
+                    window.addEventListener('mouseup', () => {
+                        if (isDragging) {
+                            isDragging = false;
+                            sessionData.eventsLog.push(`Movió elemento '${figName}' a X:${node.style.left}, Y:${node.style.top}`);
+                        }
+                    });
+
+                    constCanvas.appendChild(node);
+                    sessionData.metrics.constellations.push({ figure: figName, timeAdded: secondsElapsed });
+                    sessionData.eventsLog.push(`Agregó figura '${figName}' en segundo ${secondsElapsed}`);
+                });
+            });
+        }
+
+        // --- TEST 3: DINÁMICA CROMÁTICA Y FLUJO EMOCIONAL ---
+        function initChromaticTest() {
+            testTitleDisplay.textContent = "Test de Dinámica Cromática y Flujo Emocional";
+            testInstructionDisplay.textContent = "Interactúa con la paleta para plasmar trazos de color que representen tu estado dinámico actual.";
+
+            testCanvasContainer.innerHTML = `
+                <div class="w-full h-full flex flex-col">
+                    <div class="bg-slate-900 p-3 border-b border-slate-800 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400">Paleta:</span>
+                            <button class="w-6 h-6 rounded-full bg-red-600 border border-white color-btn" data-color="#dc2626"></button>
+                            <button class="w-6 h-6 rounded-full bg-blue-600 border border-white color-btn" data-color="#2563eb"></button>
+                            <button class="w-6 h-6 rounded-full bg-amber-500 border border-white color-btn" data-color="#f59e0b"></button>
+                            <button class="w-6 h-6 rounded-full bg-emerald-600 border border-white color-btn" data-color="#059669"></button>
+                            <button class="w-6 h-6 rounded-full bg-purple-600 border border-white color-btn" data-color="#7c3aed"></button>
+                            <button class="w-6 h-6 rounded-full bg-slate-200 border border-white color-btn" data-color="#e2e8f0"></button>
+                        </div>
+                        <div class="text-xs text-slate-400">Color seleccionado: <span id="selected-color-indicator" class="inline-block w-3 h-3 rounded-full bg-red-600 ml-1"></span></div>
+                        <button id="btn-clear-canvas" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded text-slate-300 hover:bg-slate-700">Limpiar Lienzo</button>
+                    </div>
+                    <canvas id="paint-canvas" class="flex-1 w-full bg-slate-950 cursor-crosshair"></canvas>
+                </div>
+            `;
+
+            sessionData.metrics.chromaticActions = [];
+            const canvas = document.getElementById('paint-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Resize canvas to container
+            setTimeout(() => {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight - 50;
+                ctx.fillStyle = '#020617';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }, 50);
+
+            let painting = false;
+            let currentColor = '#dc2626';
+
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    currentColor = e.target.getAttribute('data-color');
+                    document.getElementById('selected-color-indicator').style.backgroundColor = currentColor;
+                    sessionData.eventsLog.push(`Seleccionó color ${currentColor} en segundo ${secondsElapsed}`);
+                });
+            });
+
+            document.getElementById('btn-clear-canvas').addEventListener('click', () => {
+                ctx.fillStyle = '#020617';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                sessionData.eventsLog.push(`Limpió el lienzo cromático en segundo ${secondsElapsed}`);
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                painting = true;
+                ctx.beginPath();
+                ctx.moveTo(e.offsetX, e.offsetY);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!painting) return;
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (painting) {
+                    painting = false;
+                    sessionData.metrics.chromaticActions.push({ time: secondsElapsed, color: currentColor });
+                }
+            });
+        }
+
+        // --- TEST 4: LABERINTO GENERATIVO / RECORRIDO VITAL ---
+        function initLabyrinthTest() {
+            testTitleDisplay.textContent = "Test del Laberinto Generativo / Recorrido Vital";
+            testInstructionDisplay.textContent = "Guía el cursor o haz clic en las opciones del camino ramificado que reflejen tu estrategia de resolución.";
+
+            testCanvasContainer.innerHTML = `
+                <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                    <div class="max-w-md bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl space-y-4">
+                        <h3 class="text-base font-bold text-indigo-300">Punto de Elección Estratégica</h3>
+                        <p class="text-xs text-slate-400" id="labyrinth-prompt">Te encuentras ante una bifurcación crítica en el recorrido. Selecciona tu patrón de avance:</p>
+                        <div id="labyrinth-choices" class="flex flex-col gap-2">
+                            <button class="lab-btn bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-lg text-xs font-medium transition" data-choice="Ruta cautelosa / Analítica">Tomar ruta cautelosa y estructurada</button>
+                            <button class="lab-btn bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-lg text-xs font-medium transition" data-choice="Ruta exploratoria / Flexible">Explorar alternativas abiertas sin plan fijo</button>
+                            <button class="lab-btn bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-lg text-xs font-medium transition" data-choice="Ruta directa / Impulsiva">Avanzar de forma directa hacia el núcleo</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            sessionData.metrics.labyrinthPath = [];
+
+            document.querySelectorAll('.lab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const choice = e.target.getAttribute('data-choice');
+                    sessionData.metrics.labyrinthPath.push({ choice, time: secondsElapsed });
+                    sessionData.eventsLog.push(`Selección en laberinto: '${choice}' en segundo ${secondsElapsed}`);
+                    
+                    document.getElementById('labyrinth-prompt').textContent = "Elección registrada correctamente. Continúa hacia el análisis final.";
+                    document.getElementById('labyrinth-choices').innerHTML = `<span class="text-emerald-400 font-semibold text-sm">✓ Patrón guardado con éxito. Puedes finalizar la prueba arriba.</span>`;
+                });
+            });
+        }
+
+        // Finish Test & Generate Report
+        btnFinish.addEventListener('click', () => {
+            stopTimer();
+            screenTest.classList.add('hidden');
+            screenReport.classList.remove('hidden');
+
+            generateReportHTML();
+        });
+
+        function generateReportHTML() {
+            let html = `
+                <div class="border-b border-slate-700 pb-3 mb-3">
+                    <h3 class="font-bold text-white text-base">Datos Generales de la Evaluación</h3>
+                    <p class="text-xs text-slate-400 mt-1">Evaluado: <strong class="text-white">${sessionData.patientName}</strong> | Evaluador: <strong class="text-white">${sessionData.evaluatorName}</strong></p>
+                    <p class="text-xs text-slate-400">Prueba aplicada: <strong class="text-indigo-300">${sessionData.testType.toUpperCase()}</strong></p>
+                    <p class="text-xs text-slate-400">Duración total de ejecución: <strong class="text-amber-400">${Math.floor(sessionData.durationSeconds / 60)}m ${sessionData.durationSeconds % 60}s</strong></p>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-indigo-300 text-sm">Parámetros y Métricas Registradas (Para Análisis Profesional):</h4>
+                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs font-mono max-h-48 overflow-y-auto space-y-1">
+            `;
+
+            if (sessionData.eventsLog.length === 0) {
+                html += `<p class="text-slate-500">No se registraron interacciones discretas adicionales.</p>`;
+            } else {
+                sessionData.eventsLog.forEach(evt => {
+                    html += `<p class="text-slate-300">• [Registro digital] ${evt}</p>`;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-4 border-t border-slate-700 pt-3">
+                    Nota clínica: Este informe compila exclusivamente los registros métricos y temporales generados por la interacción del usuario en pantalla. La interpretación cualitativa queda a criterio del profesional responsable.
+                </div>
+            `;
+
+            reportContent.innerHTML = html;
+        }
+
+        // Word Export Handler (.doc format via HTML blob)
+        btnExportWord.addEventListener('click', () => {
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Informe Proyectivo</title></head><body>";
+            const footer = "</body></html>";
+            
+            let contentHTML = `
+                <h2>INFORME DE EVALUACIÓN PROYECTIVA DIGITAL</h2>
+                <p><b>Paciente:</b> ${sessionData.patientName}</p>
+                <p><b>Evaluador:</b> ${sessionData.evaluatorName}</p>
+                <p><b>Prueba:</b> ${sessionData.testType}</p>
+                <p><b>Tiempo de Ejecución:</b> ${sessionData.durationSeconds} segundos</p>
+                <hr/>
+                <h3>Registro Cronológico de Eventos y Métricas:</h3>
+                <ul>
+            `;
+            
+            sessionData.eventsLog.forEach(e => {
+                contentHTML += `<li>${e}</li>`;
+            });
+            contentHTML += "</ul>";
+
+            const source = header + contentHTML + footer;
+            const blob = new Blob(['\ufeff' + source], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Informe_Proyectivo_${sessionData.patientName.replace(/\s+/g, '_')}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    </script>
+</body>
+</html>
