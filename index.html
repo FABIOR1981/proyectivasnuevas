@@ -114,7 +114,7 @@
         }
         .toolbar label { margin: 0; font-size: 0.9rem; }
 
-        /* Espacio de Constelación mejorado con paleta de elementos */
+        /* Espacio de Constelación */
         .constellation-layout {
             display: flex;
             gap: 15px;
@@ -260,7 +260,7 @@
         </div>
     </div>
 
-    <!-- Pantalla 3B: Constelación Familiar (Elementos Múltiples) -->
+    <!-- Pantalla 3B: Constelación Familiar -->
     <div id="screen-constellation" class="screen">
         <h2>Constelación Familiar / Vincular</h2>
         <p>Consigna: <em>"Seleccione de la paleta los elementos que necesite y colóquelos en el plano para estructurar la escena."</em></p>
@@ -301,13 +301,13 @@
         </div>
     </div>
 
-    <!-- Pantalla 3D: Laberinto Complejo para Adultos -->
+    <!-- Pantalla 3D: Laberinto Real para Adultos -->
     <div id="screen-maze" class="screen">
-        <h2>Laberinto Estratégico (Adultos)</h2>
-        <p>Consigna: <em>"Trace el recorrido desde la Entrada (Verde) hasta la Salida (Roja) superando las bifurcaciones."</em></p>
+        <h2>Laberinto Estructural Complejo (Adultos)</h2>
+        <p>Consigna: <em>"Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja), resolviendo las bifurcaciones y evitando chocar contra las paredes."</em></p>
         <div class="toolbar">
-            <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="8" value="3"></label>
-            <button class="secondary" onclick="initComplexMaze()">Reiniciar Trazado</button>
+            <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="6" value="3"></label>
+            <button class="secondary" onclick="initRealMaze()">Generar Nuevo Laberinto</button>
         </div>
         <div class="canvas-container">
             <canvas id="mazeCanvas" width="750" height="420"></canvas>
@@ -364,7 +364,7 @@
         if(type === 'house') initHouseCanvas();
         if(type === 'constellation') clearConstellation();
         if(type === 'color') initColorCanvas();
-        if(type === 'maze') initComplexMaze();
+        if(type === 'maze') initRealMaze();
     }
 
     function backToMenu() { switchScreen('screen-menu'); }
@@ -393,7 +393,7 @@
     }
     function setHouseTool(t) { houseTool = t; }
 
-    // --- CONSTELACIÓN FAMILIAR (MULTIELEMENTO ARRASTRABLE) ---
+    // --- CONSTELACIÓN FAMILIAR ---
     function addConstellationItem(label, isCircle) {
         const ws = document.getElementById('constellation-workspace');
         const div = document.createElement('div');
@@ -447,40 +447,106 @@
         colorCtx.fill();
     }
 
-    // --- LABERINTO COMPLEJO ADULTOS ---
+    // --- LABERINTO REAL ESTRUCTURAL (ALGORITMO DE GRILLA PARA ADULTOS) ---
     let mazeCanvas, mazeCtx, isDrawingMaze = false;
-    function initComplexMaze() {
+    let mazeGrid = [];
+    const cols = 25;
+    const rows = 14;
+    let cellW, cellH;
+
+    function initRealMaze() {
         mazeCanvas = document.getElementById('mazeCanvas');
         mazeCtx = mazeCanvas.getContext('2d');
         clearCanvas('mazeCanvas', mazeCtx, '#FFFFFF');
-        
-        // Dibujar estructura compleja para adultos
-        mazeCtx.strokeStyle = '#2c3e50';
-        mazeCtx.lineWidth = 3;
-        mazeCtx.strokeRect(15, 15, 720, 390);
 
-        // Múltiples paredes internas intrincadas
-        let walls = [
-            [70,15, 70,300], [140,100, 140,390], [210,15, 210,300],
-            [280,100, 280,390], [350,50, 350,350], [420,100, 420,390],
-            [490,15, 490,300], [560,80, 560,390], [640,15, 640,320],
-            // Conectores / obstáculos horizontales
-            [70,100, 140,100], [210,300, 280,300], [350,150, 490,150],
-            [140,250, 210,250], [420,280, 560,280], [280,70, 350,70]
-        ];
-        walls.forEach(w => {
-            mazeCtx.beginPath();
-            mazeCtx.moveTo(w[0], w[1]);
-            mazeCtx.lineTo(w[2], w[3]);
-            mazeCtx.stroke();
+        cellW = mazeCanvas.width / cols;
+        cellH = mazeCanvas.height / rows;
+
+        // Inicializar celdas con todas las paredes presentes (arriba, derecha, abajo, izquierda)
+        mazeGrid = [];
+        for(let r = 0; r < rows; r++) {
+            for(let c = 0; c < cols; c++) {
+                mazeGrid.push({
+                    r: r, c: c,
+                    walls: {top: true, right: true, bottom: true, left: true},
+                    visited: false
+                });
+            }
+        }
+
+        // Generación de laberinto perfecto mediante DFS (Depth-First Search) iterativo
+        let stack = [];
+        let current = mazeGrid[0];
+        current.visited = true;
+
+        function getUnvisitedNeighbors(cell) {
+            let neighbors = [];
+            let {r, c} = cell;
+            let index = (r, c) => r * cols + c;
+
+            if(r > 0 && !mazeGrid[index(r-1, c)].visited) neighbors.push({cell: mazeGrid[index(r-1, c)], dir: 'top'});
+            if(c < cols-1 && !mazeGrid[index(r, c+1)].visited) neighbors.push({cell: mazeGrid[index(r, c+1)], dir: 'right'});
+            if(r < rows-1 && !mazeGrid[index(r+1, c)].visited) neighbors.push({cell: mazeGrid[index(r+1, c)], dir: 'bottom'});
+            if(c > 0 && !mazeGrid[index(r, c-1)].visited) neighbors.push({cell: mazeGrid[index(r, c-1)], dir: 'left'});
+
+            return neighbors;
+        }
+
+        // Bucle de construcción algorítmica
+        let unvisitedCount = rows * cols - 1;
+        while(unvisitedCount > 0) {
+            let neighbors = getUnvisitedNeighbors(current);
+            if(neighbors.length > 0) {
+                let nextObj = neighbors[Math.floor(Math.random() * neighbors.length)];
+                let next = nextObj.cell;
+                stack.push(current);
+
+                // Romper paredes entre current y next
+                if(nextObj.dir === 'top') { current.walls.top = false; next.walls.bottom = false; }
+                if(nextObj.dir === 'right') { current.walls.right = false; next.walls.left = false; }
+                if(nextObj.dir === 'bottom') { current.walls.bottom = false; next.walls.top = false; }
+                if(nextObj.dir === 'left') { current.walls.left = false; next.walls.right = false; }
+
+                next.visited = true;
+                current = next;
+                unvisitedCount--;
+            } else if(stack.length > 0) {
+                current = stack.pop();
+            } else {
+                break;
+            }
+        }
+
+        // Abrir un par de paredes extra para generar caminos alternativos complejos (cruces)
+        for(let i = 0; i < 15; i++) {
+            let randCell = mazeGrid[Math.floor(Math.random() * mazeGrid.length)];
+            if(randCell.walls.right) randCell.walls.right = false;
+            if(randCell.walls.bottom) randCell.walls.bottom = false;
+        }
+
+        // Dibujar el laberinto en el Canvas
+        mazeCtx.strokeStyle = '#2c3e50';
+        mazeCtx.lineWidth = 2.5;
+
+        mazeGrid.forEach(cell => {
+            let x = cell.c * cellW;
+            let y = cell.r * cellH;
+
+            if(cell.walls.top) { mazeCtx.beginPath(); mazeCtx.moveTo(x, y); mazeCtx.lineTo(x + cellW, y); mazeCtx.stroke(); }
+            if(cell.walls.right) { mazeCtx.beginPath(); mazeCtx.moveTo(x + cellW, y); mazeCtx.lineTo(x + cellW, y + cellH); mazeCtx.stroke(); }
+            if(cell.walls.bottom) { mazeCtx.beginPath(); mazeCtx.moveTo(x, y + cellH); mazeCtx.lineTo(x + cellW, y + cellH); mazeCtx.stroke(); }
+            if(cell.walls.left) { mazeCtx.beginPath(); mazeCtx.moveTo(x, y); mazeCtx.lineTo(x, y + cellH); mazeCtx.stroke(); }
         });
 
-        // Entrada y Salida
+        // Casilla de Entrada (Verde - Esquina superior izquierda)
         mazeCtx.fillStyle = '#27ae60';
-        mazeCtx.fillRect(20, 20, 35, 30); // Entrada
-        mazeCtx.fillStyle = '#c0392b';
-        mazeCtx.fillRect(695, 365, 35, 30); // Salida
+        mazeCtx.fillRect(cellW * 0.15, cellH * 0.15, cellW * 0.7, cellH * 0.7);
 
+        // Casilla de Salida (Roja - Esquina inferior derecha)
+        mazeCtx.fillStyle = '#c0392b';
+        mazeCtx.fillRect(cellW * (cols-1) + cellW * 0.15, cellH * (rows-1) + cellH * 0.15, cellW * 0.7, cellH * 0.7);
+
+        // Configurar eventos de trazado del usuario
         mazeCanvas.onmousedown = (e) => { isDrawingMaze = true; mazeCtx.beginPath(); mazeCtx.moveTo(e.offsetX, e.offsetY); };
         mazeCanvas.onmousemove = (e) => {
             if(!isDrawingMaze) return;
@@ -500,10 +566,8 @@
         if (type === 'house') {
             testData.house = { img: houseCanvas.toDataURL(), time: duration };
         } else if (type === 'constellation') {
-            // Generar imagen simulada del contenedor usando HTML clonado con estilos absolutos incrustados
             let ws = document.getElementById('constellation-workspace');
-            let cloneHtml = ws.innerHTML;
-            testData.constellation = { html: cloneHtml, time: duration };
+            testData.constellation = { html: ws.innerHTML, time: duration };
         } else if (type === 'color') {
             testData.color = { img: colorCanvas.toDataURL(), time: duration };
         } else if (type === 'maze') {
@@ -552,7 +616,7 @@
         if(testData.maze) {
             container.innerHTML += `
                 <div style="margin-bottom: 30px;">
-                    <h4>4. Laberinto Estratégico Complejo (Adultos)</h4>
+                    <h4>4. Laberinto Estructural Complejo (Adultos)</h4>
                     <p><strong>Tiempo de ejecución:</strong> ${testData.maze.time} segundos</p>
                     <img src="${testData.maze.img}" class="img-result">
                 </div>`;
