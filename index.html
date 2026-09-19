@@ -6,22 +6,22 @@
     <title>PsiMatrix - Suite Proyectiva Digital</title>
     <style>
         :root {
-            --brand-dark: #1e293b;
-            --brand-primary: #0284c7;
-            --brand-primary-hover: #0369a1;
-            --brand-accent: #0d9488;
-            --bg-main: #f8fafc;
-            --surface: #ffffff;
-            --text-main: #334155;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --radius: 10px;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --bg-body: #0f172a;
+            --bg-container: #1e293b;
+            --surface: #334155;
+            --brand-primary: #38bdf8;
+            --brand-primary-hover: #0ea5e9;
+            --brand-accent: #14b8a6;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #475569;
+            --radius: 12px;
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
         }
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-main);
+            background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0;
             padding: 30px 20px;
@@ -30,7 +30,7 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            background: var(--surface);
+            background: var(--bg-container);
             padding: 40px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
@@ -45,7 +45,7 @@
         }
 
         h1 {
-            color: var(--brand-dark);
+            color: #ffffff;
             font-size: 1.8rem;
             margin: 0 0 8px 0;
             font-weight: 700;
@@ -74,7 +74,7 @@
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--brand-dark);
+            color: var(--text-main);
             font-size: 0.95rem;
         }
         input, select {
@@ -84,24 +84,24 @@
             border-radius: 8px;
             font-size: 1rem;
             box-sizing: border-box;
-            background-color: #f8fafc;
+            background-color: #0f172a;
+            color: #ffffff;
             transition: all 0.2s;
         }
         input:focus {
             outline: none;
             border-color: var(--brand-primary);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
 
         /* Botones de Estilo Moderno */
         button {
             background-color: var(--brand-primary);
-            color: white;
+            color: #0f172a;
             border: none;
             padding: 12px 24px;
             font-size: 0.95rem;
-            font-weight: 600;
+            font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
@@ -112,11 +112,11 @@
             transform: translateY(-1px);
         }
         button.secondary {
-            background-color: #e2e8f0;
-            color: var(--brand-dark);
+            background-color: var(--surface);
+            color: var(--text-main);
         }
         button.secondary:hover {
-            background-color: #cbd5e1;
+            background-color: #475569;
         }
 
         /* Menú de Pruebas tipo Dashboard */
@@ -133,18 +133,18 @@
             text-align: left;
             cursor: pointer;
             transition: all 0.2s;
-            background: #ffffff;
+            background: var(--surface);
             position: relative;
             overflow: hidden;
         }
         .test-card:hover {
             border-color: var(--brand-primary);
-            box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
             transform: translateY(-2px);
         }
         .test-card h3 {
             margin: 0 0 8px 0;
-            color: var(--brand-dark);
+            color: #ffffff;
             font-size: 1.1rem;
         }
         .test-card p {
@@ -158,8 +158,8 @@
             position: absolute;
             top: 12px;
             right: 12px;
-            background: #dcfce7;
-            color: #15803d;
+            background: rgba(20, 184, 166, 0.2);
+            color: #2dd4bf;
             font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 20px;
@@ -168,13 +168,13 @@
 
         /* Contenedores de Dibujo y Herramientas */
         .canvas-container {
-            border: 1px solid var(--border-color);
-            background: #fff;
+            border: 2px solid var(--border-color);
+            background: #ffffff; /* Blanco puro para mantener el lienzo clásico de dibujo */
             border-radius: var(--radius);
             position: relative;
             display: inline-block;
             overflow: hidden;
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
         canvas { display: block; cursor: crosshair; }
 
@@ -184,12 +184,14 @@
             margin-bottom: 20px;
             align-items: center;
             flex-wrap: wrap;
-            background: #f1f5f9;
+            background: var(--surface);
             padding: 12px 16px;
             border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
         .toolbar label { margin: 0; font-size: 0.85rem; color: var(--text-main); }
-        .toolbar button { padding: 8px 16px; font-size: 0.85rem; }
+        .toolbar button { padding: 8px 16px; font-size: 0.85rem; background: var(--bg-body); color: var(--text-main); }
+        .toolbar button:hover { background: var(--border-color); }
 
         /* Constelación Familiar */
         .constellation-layout {
@@ -201,42 +203,42 @@
             border: 1px solid var(--border-color);
             padding: 16px;
             border-radius: var(--radius);
-            background: #f8fafc;
+            background: var(--surface);
         }
         .palette-item {
             background: var(--brand-accent);
-            color: white;
+            color: #0f172a;
             padding: 10px 12px;
             margin-bottom: 10px;
             border-radius: 6px;
             text-align: center;
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
             transition: background 0.2s;
         }
-        .palette-item:hover { background: #0f766e; }
+        .palette-item:hover { background: #2dd4bf; }
         
         #constellation-workspace {
             width: 720px;
             height: 420px;
             border: 2px dashed var(--border-color);
             position: relative;
-            background: #fff;
+            background: #ffffff;
             border-radius: var(--radius);
             overflow: hidden;
         }
         .placed-item {
             position: absolute;
             padding: 8px 14px;
-            background: var(--brand-dark);
-            color: white;
+            background: #0f172a;
+            color: #ffffff;
             border-radius: 6px;
             cursor: move;
             user-select: none;
             font-size: 0.8rem;
             font-weight: bold;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
             z-index: 10;
         }
         .placed-item.circle { 
@@ -256,22 +258,23 @@
             border: 1px solid var(--border-color);
             padding: 30px;
             border-radius: var(--radius);
-            background: #fff;
+            background: #ffffff;
+            color: #334155;
             margin-bottom: 25px;
         }
         .report-header {
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 2px solid #e2e8f0;
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
-        .report-header h3 { margin: 0 0 5px 0; color: var(--brand-dark); }
+        .report-header h3 { margin: 0 0 5px 0; color: #0f172a; }
         .img-result {
             max-width: 100%;
-            border: 1px solid var(--border-color);
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             margin-top: 10px;
             background: #fff;
-            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
         .actions-bar {
             display: flex;
@@ -315,7 +318,7 @@
     <div id="screen-menu" class="screen">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2 style="margin:0;">Batería de Pruebas</h2>
-            <span style="font-size: 0.9rem; color: var(--text-muted);">Paciente: <strong id="lbl-patient-name" style="color: var(--brand-dark);"></strong></span>
+            <span style="font-size: 0.9rem; color: var(--text-muted);">Paciente: <strong id="lbl-patient-name" style="color: var(--brand-primary);"></strong></span>
         </div>
         <p class="subtitle">Seleccione una técnica para administrar. Puede realizar las pruebas en el orden que prefiera.</p>
         
@@ -352,11 +355,11 @@
             <button onclick="setHouseTool('pen')">Lápiz fino</button>
             <button onclick="setHouseTool('brush')">Pincel</button>
             <button onclick="setHouseTool('eraser')">Goma</button>
-            <label>Color: <input type="color" id="house-color" value="#1e293b" onchange="setHouseColor(this.value)" style="padding:0; width:35px; height:32px; border:none; background:none; cursor:pointer;"></label>
+            <label>Color: <input type="color" id="house-color" value="#0f172a" onchange="setHouseColor(this.value)" style="padding:0; width:35px; height:32px; border:none; background:none; cursor:pointer;"></label>
             <button class="secondary" onclick="clearCanvas('houseCanvas', houseCtx, '#FFFFFF')">Limpiar Lienzo</button>
         </div>
         <div class="canvas-container">
-            <canvas id="houseCanvas" width="750" height="420"></canvas>
+            <canvas id="houseCanvas" width="720" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
@@ -395,11 +398,11 @@
         <div class="toolbar">
             <button onclick="setColorTool('fluid')">Trazo Continuo</button>
             <button onclick="setColorTool('splash')">Mancha / Textura</button>
-            <label>Color: <input type="color" id="paint-color" value="#0284c7" onchange="setPaintColor(this.value)" style="padding:0; width:35px; height:32px; border:none; background:none; cursor:pointer;"></label>
+            <label>Color: <input type="color" id="paint-color" value="#0ea5e9" onchange="setPaintColor(this.value)" style="padding:0; width:35px; height:32px; border:none; background:none; cursor:pointer;"></label>
             <button class="secondary" onclick="clearCanvas('colorCanvas', colorCtx, '#FFFFFF')">Limpiar Lienzo</button>
         </div>
         <div class="canvas-container">
-            <canvas id="colorCanvas" width="750" height="420"></canvas>
+            <canvas id="colorCanvas" width="720" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
@@ -416,7 +419,7 @@
             <button class="secondary" onclick="initRealMaze()">Reiniciar Laberinto</button>
         </div>
         <div class="canvas-container">
-            <canvas id="mazeCanvas" width="750" height="420"></canvas>
+            <canvas id="mazeCanvas" width="720" height="420"></canvas>
         </div>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
@@ -433,7 +436,7 @@
             <div class="report-header">
                 <h3>PsiMatrix - Reporte Proyectivo Digital</h3>
                 <p><strong>Evaluado:</strong> <span id="rep-name"></span> | <strong>ID:</strong> <span id="rep-id"></span> | <strong>Edad:</strong> <span id="rep-age"></span></p>
-                <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Fecha de Evaluación: <span id="rep-date"></span></p>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Fecha de Evaluación: <span id="rep-date"></span></p>
             </div>
             <div id="rep-results-container"></div>
         </div>
@@ -479,7 +482,6 @@
     }
 
     function backToMenu() {
-        // Actualizar estados visuales de completado en el menú
         if(testData.house) document.getElementById('card-house').classList.add('completed');
         if(testData.constellation) document.getElementById('card-constellation').classList.add('completed');
         if(testData.color) document.getElementById('card-color').classList.add('completed');
@@ -645,7 +647,7 @@
             if(randCell.walls.bottom) randCell.walls.bottom = false;
         }
 
-        mazeCtx.strokeStyle = '#1e293b';
+        mazeCtx.strokeStyle = '#0f172a';
         mazeCtx.lineWidth = 2.2;
 
         mazeGrid.forEach(cell => {
@@ -658,17 +660,17 @@
             if(cell.walls.left) { mazeCtx.beginPath(); mazeCtx.moveTo(x, y); mazeCtx.lineTo(x, y + cellH); mazeCtx.stroke(); }
         });
 
-        mazeCtx.fillStyle = '#15803d';
+        mazeCtx.fillStyle = '#10b981';
         mazeCtx.fillRect(cellW * 0.15, cellH * 0.15, cellW * 0.7, cellH * 0.7);
 
-        mazeCtx.fillStyle = '#b91c1c';
+        mazeCtx.fillStyle = '#f43f5e';
         mazeCtx.fillRect(cellW * (cols-1) + cellW * 0.15, cellH * (rows-1) + cellH * 0.15, cellW * 0.7, cellH * 0.7);
 
         mazeCanvas.onmousedown = (e) => { isDrawingMaze = true; mazeCtx.beginPath(); mazeCtx.moveTo(e.offsetX, e.offsetY); };
         mazeCanvas.onmousemove = (e) => {
             if(!isDrawingMaze) return;
             mazeCtx.lineWidth = document.getElementById('maze-size').value;
-            mazeCtx.strokeStyle = '#b91c1c';
+            mazeCtx.strokeStyle = '#f43f5e';
             mazeCtx.lineTo(e.offsetX, e.offsetY);
             mazeCtx.stroke();
         };
@@ -700,7 +702,7 @@
                 let isCircle = item.classList.contains('circle');
                 let text = item.innerText;
                 
-                tCtx.fillStyle = isCircle ? '#1e293b' : '#0d9488';
+                tCtx.fillStyle = isCircle ? '#0f172a' : '#14b8a6';
                 
                 if(isCircle) {
                     tCtx.beginPath();
@@ -743,32 +745,32 @@
         if(testData.house) {
             container.innerHTML += `
                 <div style="margin-bottom: 30px;">
-                    <h4 style="color:var(--brand-dark); margin-bottom: 5px;">1. Test de la Casa (Espacio Habitable)</h4>
-                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:var(--text-muted);">Tiempo de ejecución: ${testData.house.time} segundos</p>
+                    <h4 style="color:#0f172a; margin-bottom: 5px;">1. Test de la Casa (Espacio Habitable)</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:#64748b;">Tiempo de ejecución: ${testData.house.time} segundos</p>
                     <img src="${testData.house.img}" class="img-result">
                 </div>`;
         }
         if(testData.constellation) {
             container.innerHTML += `
                 <div style="margin-bottom: 30px;">
-                    <h4 style="color:var(--brand-dark); margin-bottom: 5px;">2. Constelación Familiar / Vincular</h4>
-                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:var(--text-muted);">Tiempo de ejecución: ${testData.constellation.time} segundos</p>
+                    <h4 style="color:#0f172a; margin-bottom: 5px;">2. Constelación Familiar / Vincular</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:#64748b;">Tiempo de ejecución: ${testData.constellation.time} segundos</p>
                     <img src="${testData.constellation.img}" class="img-result">
                 </div>`;
         }
         if(testData.color) {
             container.innerHTML += `
                 <div style="margin-bottom: 30px;">
-                    <h4 style="color:var(--brand-dark); margin-bottom: 5px;">3. Dinámica Cromática y Expresión Emocional</h4>
-                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:var(--text-muted);">Tiempo de ejecución: ${testData.color.time} segundos</p>
+                    <h4 style="color:#0f172a; margin-bottom: 5px;">3. Dinámica Cromática y Expresión Emocional</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:#64748b;">Tiempo de ejecución: ${testData.color.time} segundos</p>
                     <img src="${testData.color.img}" class="img-result">
                 </div>`;
         }
         if(testData.maze) {
             container.innerHTML += `
                 <div style="margin-bottom: 30px;">
-                    <h4 style="color:var(--brand-dark); margin-bottom: 5px;">4. Laberinto Estructural Complejo (Adultos)</h4>
-                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:var(--text-muted);">Tiempo de ejecución: ${testData.maze.time} segundos</p>
+                    <h4 style="color:#0f172a; margin-bottom: 5px;">4. Laberinto Estructural Complejo (Adultos)</h4>
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color:#64748b;">Tiempo de ejecución: ${testData.maze.time} segundos</p>
                     <img src="${testData.maze.img}" class="img-result">
                 </div>`;
         }
