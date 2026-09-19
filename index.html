@@ -497,8 +497,9 @@
         <p class="subtitle" style="margin-bottom: 20px;">Consigna: <em>"Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja)."</em></p>
         <div class="toolbar">
             <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="6" value="3"></label>
-            <label>Nº de laberinto: <input type="number" id="maze-seed" min="1" max="999999" value="1"></label>
+            <label>Nº de laberinto (1 a 9999): <input type="number" id="maze-seed" min="1" max="9999" placeholder="al azar"></label>
             <button class="secondary" onclick="newMaze()">Generar laberinto</button>
+            <button class="secondary" onclick="randomMaze()">🎲 Al azar</button>
             <button class="secondary" onclick="clearMazePath()">Borrar trazo</button>
             <button class="accent" onclick="toggleMazeFullscreen()">⛶ Pantalla completa</button>
         </div>
@@ -511,7 +512,7 @@
                 <canvas id="mazeCanvas" width="1080" height="630"></canvas>
             </div>
         </div>
-        <p class="hint" style="margin-top: 10px;">Usar el mismo número de laberinto genera siempre el mismo diseño, lo que permite administrar el mismo laberinto a distintos evaluados.</p>
+        <p class="hint" style="margin-top: 10px;">Hay 9999 laberintos numerados. Escriba un número y pulse «Generar laberinto» para obtener siempre el mismo diseño (útil para administrar el mismo laberinto a distintos evaluados); con el campo vacío o con «Al azar» se elige uno cualquiera. El número queda registrado en el informe.</p>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
             <button onclick="saveTestResult('maze')">Guardar y Continuar</button>
@@ -882,6 +883,8 @@
 
     // ---------- LABERINTO ----------
     const COLS = 25, ROWS = 14;
+    const MAZE_MAX = 9999;   // laberintos numerados del 1 al MAZE_MAX
+    const randomMazeSeed = () => 1 + Math.floor(Math.random() * MAZE_MAX);
     let mazeCells = null, mazeSeed = 1, mazeHasPath = false;
 
     function mulberry32(a) {
@@ -958,10 +961,25 @@
         mazeHasPath = false;
     }
 
+    function randomMaze() {
+        $('maze-seed').value = '';
+        newMaze();
+    }
+
     function newMaze() {
+        const raw = $('maze-seed').value.trim();
+        let seed;
+        if (raw === '') {
+            seed = randomMazeSeed();
+        } else {
+            seed = Number(raw);
+            if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
+                alert(`Ingrese un número de laberinto entero entre 1 y ${MAZE_MAX}, o deje el campo vacío para elegir uno al azar.`);
+                $('maze-seed').focus();
+                return;
+            }
+        }
         if (mazeHasPath && !confirm('Se generará un laberinto nuevo y se perderá el trazo actual. ¿Continuar?')) return;
-        let seed = parseInt($('maze-seed').value, 10);
-        if (!seed || seed < 1) seed = 1 + Math.floor(Math.random() * 999999);
         mazeSeed = seed;
         $('maze-seed').value = seed;
         mazeCells = generateMaze(seed);
@@ -978,8 +996,8 @@
     function initMazeCanvas() {
         const c = $('mazeCanvas');
         c.width = CW; c.height = CH;
-        $('maze-seed').value = 1 + Math.floor(Math.random() * 999999);
-        mazeSeed = parseInt($('maze-seed').value, 10);
+        mazeSeed = randomMazeSeed();
+        $('maze-seed').value = mazeSeed;
         mazeCells = generateMaze(mazeSeed);
         drawMaze();
         const ctx = c.getContext('2d');
@@ -1212,7 +1230,7 @@
         clearCanvas($('houseCanvas'));
         clearCanvas($('colorCanvas'));
         wipeConstellation();
-        $('maze-seed').value = 1 + Math.floor(Math.random() * 999999);
+        $('maze-seed').value = '';
         mazeHasPath = false;
         newMaze();
         dirty.maze = false;
@@ -1259,4 +1277,3 @@
 
 </body>
 </html>
-
