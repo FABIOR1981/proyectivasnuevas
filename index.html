@@ -86,7 +86,7 @@
             color: #ffffff;
             transition: all 0.2s;
         }
-        .form-group input { width: 100%; }
+        .form-group input, .form-group select { width: 100%; }
         input:focus-visible, button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible {
             outline: none;
             border-color: var(--brand-primary);
@@ -343,6 +343,18 @@
             <label for="p-age">Edad:</label>
             <input type="number" id="p-age" placeholder="Ej. 38" min="0" max="120">
         </div>
+        <div class="form-group">
+            <label for="p-device">Dispositivo y forma de ingreso:</label>
+            <select id="p-device">
+                <option value="">Seleccione...</option>
+                <option>Computadora con mouse</option>
+                <option>Computadora con pantalla táctil (dedo)</option>
+                <option>Tablet con dedo</option>
+                <option>Tablet con lápiz</option>
+                <option>Celular con dedo</option>
+                <option>Otro</option>
+            </select>
+        </div>
         <div style="margin-top: 30px;">
             <button onclick="startEvaluation()">Continuar al Protocolo</button>
         </div>
@@ -478,6 +490,7 @@
             <div class="report-header">
                 <h3>PsiMatrix - Reporte Proyectivo Digital</h3>
                 <p><strong>Evaluado:</strong> <span id="rep-name"></span> | <strong>ID:</strong> <span id="rep-id"></span> | <strong>Edad:</strong> <span id="rep-age"></span></p>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Dispositivo de administración: <span id="rep-device"></span></p>
                 <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Fecha de Evaluación: <span id="rep-date"></span></p>
             </div>
             <div id="rep-results-container"></div>
@@ -509,7 +522,7 @@
 
     const $ = (id) => document.getElementById(id);
 
-    let patient = { name: '', id: '', age: '' };
+    let patient = { name: '', id: '', age: '', device: '' };
     let testData = { house: null, constellation: null, color: null, maze: null };
     let elapsedMs = { house: 0, constellation: 0, color: 0, maze: 0 };
     let dirty = { house: false, constellation: false, color: false, maze: false };
@@ -586,7 +599,14 @@
             $('p-age').focus();
             return;
         }
+        const device = $('p-device').value;
+        if (!device) {
+            alert('Seleccione el dispositivo y la forma de ingreso con que se realizarán las pruebas.');
+            $('p-device').focus();
+            return;
+        }
         patient.name = name;
+        patient.device = device;
         patient.id = $('p-id').value.trim() || 'S/D';
         patient.age = age || 'S/D';
         $('lbl-patient-name').textContent = patient.name;
@@ -994,6 +1014,7 @@
         $('rep-name').textContent = patient.name;
         $('rep-id').textContent = patient.id;
         $('rep-age').textContent = patient.age;
+        $('rep-device').textContent = patient.device;
         $('rep-date').textContent = new Date().toLocaleDateString('es-UY');
 
         const container = $('rep-results-container');
@@ -1057,6 +1078,10 @@
                 new TextRun({ text: 'ID: ', bold: true }), new TextRun(patient.id + '   '),
                 new TextRun({ text: 'Edad: ', bold: true }), new TextRun(String(patient.age))
             ] }),
+            new Paragraph({ children: [
+                new TextRun({ text: 'Dispositivo de administración: ', bold: true }),
+                new TextRun(patient.device)
+            ] }),
             new Paragraph({ spacing: { after: 300 }, children: [
                 new TextRun({ text: 'Fecha de Evaluación: ', bold: true }),
                 new TextRun(new Date().toLocaleDateString('es-UY'))
@@ -1096,7 +1121,7 @@
     // ---------- Nuevo evaluado ----------
     function resetAll() {
         if (!confirm('Se borrarán todos los datos y producciones del evaluado actual. ¿Iniciar un nuevo evaluado?')) return;
-        patient = { name: '', id: '', age: '' };
+        patient = { name: '', id: '', age: '', device: '' };
         TEST_KEYS.forEach(k => { testData[k] = null; elapsedMs[k] = 0; dirty[k] = false; obs[k] = ''; });
         obs.general = '';
         activeTest = null;
@@ -1107,7 +1132,7 @@
         mazeHasPath = false;
         newMaze();
         dirty.maze = false;
-        ['p-name', 'p-id', 'p-age'].forEach(id => { $(id).value = ''; });
+        ['p-name', 'p-id', 'p-age', 'p-device'].forEach(id => { $(id).value = ''; });
         refreshMenu();
         switchScreen('screen-patient');
     }
