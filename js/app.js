@@ -10,7 +10,7 @@ const TESTS = {
 
 const $ = (id) => document.getElementById(id);
 
-let patient = { name: '', id: '', age: '', device: '' };
+let patient = { name: '', id: '', age: '' };
 let testData = { house: null, constellation: null, color: null, maze: null };
 let elapsedMs = { house: 0, constellation: 0, color: 0, maze: 0 };
 let dirty = { house: false, constellation: false, color: false, maze: false };
@@ -87,19 +87,16 @@ function startEvaluation() {
         $('p-age').focus();
         return;
     }
-    const device = $('p-device').value;
-    if (!device) {
-        alert('Seleccione el dispositivo y la forma de ingreso con que se realizarán las pruebas.');
-        $('p-device').focus();
-        return;
-    }
     patient.name = name;
-    patient.device = device;
     patient.id = $('p-id').value.trim() || 'S/D';
     patient.age = age || 'S/D';
     $('lbl-patient-name').textContent = patient.name;
-    refreshMenu();
-    switchScreen('screen-menu');
+    if (evaluationStarted) {          // solo se estaban corrigiendo los datos
+        refreshMenu();
+        switchScreen('screen-menu');
+    } else {
+        showConfig(false);
+    }
 }
 
 function refreshMenu() {
@@ -178,6 +175,11 @@ function placeItem(div, fx, fy) {
 
 function addConstellationItem(label, isCircle) {
     const ws = $('constellation-workspace');
+    const max = config.tests.constellation.maxItems;
+    if (max && ws.children.length >= max) {
+        alert(`Se alcanzó el máximo de ${max} elementos.`);
+        return;
+    }
     const div = document.createElement('div');
     div.className = 'placed-item ' + (isCircle ? 'circle' : 'rect');
     div.dataset.circle = isCircle ? '1' : '0';
@@ -514,38 +516,8 @@ function applyMaze(seed, levelKey) {
     const g = generateMaze(seed, levelKey);
     mazeCells = g.cells;
     mazeInfo = g.info;
-    $('maze-level').value = levelKey;
-    $('maze-seed').value = seed;
     $('maze-info').textContent = `Dificultad ${cfg.label} · Laberinto Nº ${seed} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
     drawMaze();
-}
-
-function randomMaze() {
-    $('maze-seed').value = '';
-    newMaze();
-}
-
-function newMaze() {
-    const level = $('maze-level').value;
-    const raw = $('maze-seed').value.trim();
-    let seed;
-    if (raw === '') {
-        seed = randomMazeSeed();
-    } else {
-        seed = Number(raw);
-        if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
-            alert(`Ingrese un número de laberinto entero entre 1 y ${MAZE_MAX}, o deje el campo vacío para elegir uno al azar.`);
-            $('maze-level').value = mazeLevel;
-            $('maze-seed').focus();
-            return;
-        }
-    }
-    if (mazeHasPath && !confirm('Se generará un laberinto nuevo y se perderá el trazo actual. ¿Continuar?')) {
-        $('maze-level').value = mazeLevel;
-        return;
-    }
-    applyMaze(seed, level);
-    if (testData.maze) dirty.maze = true;
 }
 
 function clearMazePath() {
@@ -557,7 +529,7 @@ function clearMazePath() {
 function initMazeCanvas() {
     const c = $('mazeCanvas');
     c.width = CW; c.height = CH;
-    applyMaze(randomMazeSeed(), $('maze-level').value);
+    applyMaze(config.tests.maze.seed, config.tests.maze.level);
     const ctx = c.getContext('2d');
     bindDrawing(c, {
         draw: (a, b) => {
@@ -636,6 +608,458 @@ function onFullscreenChange() {
     setTimeout(fitMazeCanvas, 150);
 }
 
+// ---------- CONFIGURACIÓN DE LA EVALUACIÓN ----------
+// Los parámetros se definen antes de comenzar (pantalla de configuración), vienen con valores por
+// defecto y lo que efectivamente se usó en cada prueba queda registrado en el informe.
+const COLOR_PALETTE = [
+    { id: 'rojo',     name: 'Rojo',     hex: '#dc2626' },
+    { id: 'naranja',  name: 'Naranja',  hex: '#ea580c' },
+    { id: 'amarillo', name: 'Amarillo', hex: '#facc15' },
+    { id: 'verde',    name: 'Verde',    hex: '#16a34a' },
+    { id: 'celeste',  name: 'Celeste',  hex: '#0ea5e9' },
+    { id: 'azul',     name: 'Azul',     hex: '#1d4ed8' },
+    { id: 'violeta',  name: 'Violeta',  hex: '#7c3aed' },
+    { id: 'marron',   name: 'Marrón',   hex: '#78350f' },
+    { id: 'negro',    name: 'Negro',    hex: '#0f172a' }
+];
+const CONST_PRESETS = {
+    generica: { circles: ['Principal', 'Vínculo Cercano', 'F. Periférica'], rects: ['Obstáculo', 'Refugio'] },
+    familiar: { circles: ['Yo', 'Madre', 'Padre', 'Hermano/a', 'Pareja', 'Hijo/a', 'Otro'], rects: ['Obstáculo', 'Refugio'] },
+    laboral:  { circles: ['Yo', 'Jefe/a', 'Compañero/a', 'Equipo', 'Cliente'], rects: ['Obstáculo', 'Refugio'] }
+};
+const PROFILE_KEY = 'psimatrix_perfiles_v1';
+
+function defaultConfig() {
+    return {
+        device: '',
+        timerVisible: false,
+        limitAction: 'avisar',
+        order: TEST_KEYS.slice(),
+        tests: {
+            house: {
+                enabled: true, limitMin: 0, color: true, eraser: true,
+                consigna: 'Dibuje una casa o espacio habitable utilizando las herramientas provistas.'
+            },
+            constellation: {
+                enabled: true, limitMin: 0, mode: 'fija', maxItems: 0,
+                circles: CONST_PRESETS.generica.circles.slice(), rects: CONST_PRESETS.generica.rects.slice(),
+                consigna: 'Seleccione elementos de la paleta y ubíquelos libremente en el plano.'
+            },
+            color: {
+                enabled: true, limitMin: 0, paletteMode: 'libre', colors: COLOR_PALETTE.map(c => c.id),
+                tools: { fluid: true, splash: true },
+                consigna: 'Exprese libremente un estado afectivo o vivencia mediante el color y el trazo fluido.'
+            },
+            maze: {
+                enabled: true, limitMin: 0, level: 'media', seed: randomMazeSeed(),
+                consigna: 'Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja).'
+            }
+        }
+    };
+}
+
+let config = null;                 // configuración vigente
+let cfgFromMenu = false;           // la pantalla de configuración se abrió desde el menú
+let evaluationStarted = false;     // ya se confirmó la configuración para este evaluado
+const limitFired = { house: false, constellation: false, color: false, maze: false };
+
+const activeKeys = () => config.order.filter(k => config.tests[k].enabled);
+
+// --- Formulario de configuración ---
+function buildConfigUI() {
+    const box = $('cfg-color-swatches');
+    COLOR_PALETTE.forEach(c => {
+        const cb = el('input', { type: 'checkbox', value: c.id });
+        const dot = el('span', { className: 'dot' });
+        dot.style.background = c.hex;
+        box.appendChild(el('label', { className: 'cfg-swatch' }, [cb, dot, c.name]));
+    });
+}
+
+function fillConfigForm(cfg) {
+    $('cfg-device').value = cfg.device;
+    $('cfg-timer-visible').checked = cfg.timerVisible;
+    $('cfg-limit-action').value = cfg.limitAction;
+    cfg.order.forEach(k => $('cfg-tests').appendChild($('cfg-card-' + k)));
+    TEST_KEYS.forEach(k => {
+        $('cfg-' + k + '-enabled').checked = cfg.tests[k].enabled;
+        $('cfg-' + k + '-consigna').value = cfg.tests[k].consigna;
+        $('cfg-' + k + '-limit').value = cfg.tests[k].limitMin;
+    });
+    const h = cfg.tests.house;
+    $('cfg-house-color').checked = h.color;
+    $('cfg-house-eraser').checked = h.eraser;
+    const c = cfg.tests.constellation;
+    $('cfg-const-mode').value = c.mode;
+    $('cfg-const-circles').value = c.circles.join('\n');
+    $('cfg-const-rects').value = c.rects.join('\n');
+    $('cfg-const-max').value = c.maxItems;
+    const cc = cfg.tests.color;
+    $('cfg-color-mode').value = cc.paletteMode;
+    $('cfg-color-swatches').querySelectorAll('input').forEach(i => { i.checked = cc.colors.includes(i.value); });
+    $('cfg-color-fluid').checked = cc.tools.fluid;
+    $('cfg-color-splash').checked = cc.tools.splash;
+    $('cfg-maze-level').value = cfg.tests.maze.level;
+    $('cfg-maze-seed').value = cfg.tests.maze.seed;
+    updateCfgVisibility();
+    updateMazePreview();
+}
+
+function updateCfgVisibility() {
+    TEST_KEYS.forEach(k => $('cfg-card-' + k).classList.toggle('off', !$('cfg-' + k + '-enabled').checked));
+    $('cfg-const-fixed').style.display = $('cfg-const-mode').value === 'fija' ? '' : 'none';
+    $('cfg-color-swatches-wrap').style.display = $('cfg-color-mode').value === 'fija' ? '' : 'none';
+}
+
+function moveCfgCard(k, dir) {
+    const card = $('cfg-card-' + k), box = card.parentElement;
+    if (dir < 0 && card.previousElementSibling) box.insertBefore(card, card.previousElementSibling);
+    if (dir > 0 && card.nextElementSibling) box.insertBefore(card.nextElementSibling, card);
+}
+
+function applyConstPreset() {
+    const sel = $('cfg-const-preset'), p = CONST_PRESETS[sel.value];
+    if (p) {
+        $('cfg-const-circles').value = p.circles.join('\n');
+        $('cfg-const-rects').value = p.rects.join('\n');
+    }
+    sel.value = '';
+}
+
+function cfgRandomMazeSeed() {
+    $('cfg-maze-seed').value = randomMazeSeed();
+    updateMazePreview();
+}
+
+function updateMazePreview() {
+    const level = $('cfg-maze-level').value, raw = $('cfg-maze-seed').value.trim(), box = $('cfg-maze-preview');
+    if (raw === '') { box.textContent = 'Campo vacío: se elegirá un laberinto al azar al confirmar.'; return; }
+    const seed = Number(raw);
+    if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
+        box.textContent = `Ingrese un número entero entre 1 y ${MAZE_MAX}.`;
+        return;
+    }
+    const cfg = MAZE_LEVELS[level], g = generateMaze(seed, level);
+    box.textContent = `Cuadrícula ${cfg.cols}×${cfg.rows} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
+}
+
+// Lee y valida el formulario; devuelve la configuración o null (mostrando el motivo)
+function readConfigForm() {
+    const fail = (msg, id) => { alert(msg); if (id && $(id)) $(id).focus(); return null; };
+    const cfg = {
+        device: $('cfg-device').value,
+        timerVisible: $('cfg-timer-visible').checked,
+        limitAction: $('cfg-limit-action').value,
+        order: [...$('cfg-tests').children].map(c => c.dataset.test),
+        tests: {}
+    };
+    if (!cfg.device) return fail('Seleccione el dispositivo y la forma de ingreso con que se realizarán las pruebas.', 'cfg-device');
+
+    TEST_KEYS.forEach(k => {
+        cfg.tests[k] = {
+            enabled: $('cfg-' + k + '-enabled').checked,
+            consigna: $('cfg-' + k + '-consigna').value.trim(),
+            limitMin: Number($('cfg-' + k + '-limit').value || 0)
+        };
+    });
+    if (!TEST_KEYS.some(k => cfg.tests[k].enabled)) return fail('Seleccione al menos una prueba para la batería.');
+
+    for (const k of TEST_KEYS) {
+        const lim = cfg.tests[k].limitMin;
+        if (cfg.tests[k].enabled && (!Number.isInteger(lim) || lim < 0 || lim > 240)) {
+            return fail(`Límite de tiempo de «${TESTS[k].short}»: ingrese un número entero de minutos entre 0 y 240 (0 = sin límite).`, 'cfg-' + k + '-limit');
+        }
+    }
+
+    Object.assign(cfg.tests.house, { color: $('cfg-house-color').checked, eraser: $('cfg-house-eraser').checked });
+
+    const lines = (id) => $(id).value.split('\n').map(s => s.trim().slice(0, 24)).filter(Boolean);
+    const maxItems = Number($('cfg-const-max').value || 0);
+    Object.assign(cfg.tests.constellation, {
+        mode: $('cfg-const-mode').value, circles: lines('cfg-const-circles'), rects: lines('cfg-const-rects'), maxItems
+    });
+    if (cfg.tests.constellation.enabled) {
+        if (!Number.isInteger(maxItems) || maxItems < 0 || maxItems > 50) return fail('Máximo de elementos de la Constelación: ingrese un entero entre 0 y 50 (0 = sin límite).', 'cfg-const-max');
+        if (cfg.tests.constellation.mode === 'fija' && !cfg.tests.constellation.circles.length && !cfg.tests.constellation.rects.length) {
+            return fail('La paleta fija de la Constelación necesita al menos un elemento.', 'cfg-const-circles');
+        }
+    }
+
+    Object.assign(cfg.tests.color, {
+        paletteMode: $('cfg-color-mode').value,
+        colors: [...$('cfg-color-swatches').querySelectorAll('input')].filter(i => i.checked).map(i => i.value),
+        tools: { fluid: $('cfg-color-fluid').checked, splash: $('cfg-color-splash').checked }
+    });
+    if (cfg.tests.color.enabled) {
+        if (!cfg.tests.color.tools.fluid && !cfg.tests.color.tools.splash) return fail('Dinámica Cromática: habilite al menos una herramienta.');
+        if (cfg.tests.color.paletteMode === 'fija' && !cfg.tests.color.colors.length) return fail('Dinámica Cromática: marque al menos un color disponible.');
+    }
+
+    const raw = $('cfg-maze-seed').value.trim();
+    let seed = randomMazeSeed();
+    if (raw !== '') {
+        seed = Number(raw);
+        if (cfg.tests.maze.enabled && (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX)) {
+            return fail(`Número de laberinto: ingrese un entero entre 1 y ${MAZE_MAX}, o deje el campo vacío para elegir uno al azar.`, 'cfg-maze-seed');
+        }
+        if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) seed = randomMazeSeed();
+    }
+    Object.assign(cfg.tests.maze, { level: $('cfg-maze-level').value, seed });
+    return cfg;
+}
+
+// Aplica una configuración ya validada a toda la aplicación. Devuelve false si el evaluador cancela.
+function applyConfig(cfg) {
+    const conDatos = TEST_KEYS.filter(k => !cfg.tests[k].enabled && testData[k]).map(k => TESTS[k].short);
+    if (conDatos.length && !confirm(`Ya hay datos guardados de: ${conDatos.join(', ')}.\nSi la quita de la batería, quedará fuera del menú y del informe (los datos no se borran). ¿Continuar?`)) return false;
+
+    const m = cfg.tests.maze;
+    if (cfg.tests.maze.enabled && (m.level !== mazeLevel || m.seed !== mazeSeed)) {
+        if (mazeHasPath && !confirm('Cambió el laberinto: se generará uno nuevo y se perderá el trazo actual. ¿Continuar?')) return false;
+        applyMaze(m.seed, m.level);
+        if (testData.maze) dirty.maze = true;
+    } else if (!cfg.tests.maze.enabled) {
+        // sin cambios en el laberinto vigente
+        m.level = mazeLevel; m.seed = mazeSeed;
+    }
+
+    TEST_KEYS.forEach(k => {
+        if (config && config.tests[k].limitMin !== cfg.tests[k].limitMin) {
+            limitFired[k] = false;
+            $('limit-note-' + k).textContent = '';
+        }
+    });
+    config = cfg;
+    applyConfigToUI();
+    return true;
+}
+
+function setConsigna(k) {
+    const p = $('consigna-' + k), t = config.tests[k].consigna;
+    p.textContent = '';
+    if (!t) { p.style.display = 'none'; return; }
+    p.style.display = '';
+    p.appendChild(document.createTextNode('Consigna: '));
+    p.appendChild(el('em', { textContent: `"${t}"` }));
+}
+
+function buildPalette() {
+    const box = $('palette-items'), c = config.tests.constellation;
+    box.innerHTML = '';
+    const addBtn = (text, fn) => {
+        const d = el('div', { className: 'palette-item', textContent: text });
+        d.setAttribute('role', 'button');
+        d.tabIndex = 0;
+        d.addEventListener('click', fn);
+        box.appendChild(d);
+    };
+    if (c.mode === 'fija') {
+        c.circles.forEach(l => addBtn('+ ' + l, () => addConstellationItem(l, true)));
+        c.rects.forEach(l => addBtn('+ ' + l, () => addConstellationItem(l, false)));
+    } else {
+        addBtn('+ Círculo (persona / vínculo)', () => addFreeItem(true));
+        addBtn('+ Rectángulo (obstáculo / refugio)', () => addFreeItem(false));
+    }
+}
+
+function addFreeItem(isCircle) {
+    const t = prompt('Rótulo del elemento:');
+    if (t && t.trim()) addConstellationItem(t.trim().slice(0, 24), isCircle);
+}
+
+function buildPaintSwatches() {
+    const cc = config.tests.color, box = $('paint-swatches'), input = $('paint-color'), lbl = $('lbl-paint-color');
+    box.innerHTML = '';
+    if (cc.paletteMode === 'fija') {
+        lbl.style.display = 'none';
+        box.style.display = 'flex';
+        COLOR_PALETTE.filter(c => cc.colors.includes(c.id)).forEach(c => {
+            const b = el('button', { type: 'button', className: 'swatch', title: c.name });
+            b.style.background = c.hex;
+            b.addEventListener('click', () => {
+                input.value = c.hex;
+                box.querySelectorAll('.swatch').forEach(x => x.classList.toggle('active', x === b));
+            });
+            box.appendChild(b);
+        });
+        if (box.firstChild) box.firstChild.click();
+    } else {
+        lbl.style.display = '';
+        box.style.display = 'none';
+    }
+}
+
+function applyConfigToUI() {
+    const grid = $('test-grid');
+    config.order.forEach(k => {
+        const card = $('card-' + k);
+        grid.appendChild(card);
+        card.style.display = config.tests[k].enabled ? '' : 'none';
+        setConsigna(k);
+    });
+
+    const h = config.tests.house;
+    $('btn-house-eraser').style.display = h.eraser ? '' : 'none';
+    $('lbl-house-color').style.display = h.color ? '' : 'none';
+    if (!h.color) $('house-color').value = '#0f172a';
+    if (!h.eraser && houseTool === 'eraser') { houseTool = 'pen'; setActiveTool($('btn-house-pen')); }
+
+    buildPalette();
+
+    const cc = config.tests.color;
+    $('btn-color-fluid').style.display = cc.tools.fluid ? '' : 'none';
+    $('btn-color-splash').style.display = cc.tools.splash ? '' : 'none';
+    if (!cc.tools[colorTool]) colorTool = cc.tools.fluid ? 'fluid' : 'splash';
+    setActiveTool($('btn-color-' + colorTool));
+    buildPaintSwatches();
+
+    if (!config.timerVisible) TEST_KEYS.forEach(k => { $('timer-' + k).style.display = 'none'; });
+}
+
+// --- Flujo de pantallas ---
+function showConfig(fromMenu) {
+    cfgFromMenu = fromMenu;
+    fillConfigForm(config);
+    refreshProfileSelect();
+    $('cfg-confirm-btn').textContent = fromMenu ? 'Aplicar y volver a la batería' : 'Comenzar la batería';
+    switchScreen('screen-config');
+}
+
+function cfgBack() {
+    switchScreen(cfgFromMenu ? 'screen-menu' : 'screen-patient');
+}
+
+function confirmConfig() {
+    const cfg = readConfigForm();
+    if (!cfg || !applyConfig(cfg)) return;
+    evaluationStarted = true;
+    $('lbl-patient-name').textContent = patient.name;
+    refreshMenu();
+    switchScreen('screen-menu');
+}
+
+// --- Perfiles (solo parámetros; se guardan en este navegador) ---
+function loadProfiles() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch (e) { return {}; }
+}
+
+function storeProfiles(p) {
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); return true; }
+    catch (e) { alert('No se pudo guardar el perfil en este navegador.'); return false; }
+}
+
+function refreshProfileSelect(selected) {
+    const sel = $('cfg-profile');
+    sel.innerHTML = '';
+    sel.appendChild(el('option', { value: '', textContent: 'Valores por defecto' }));
+    Object.keys(loadProfiles()).sort().forEach(n => sel.appendChild(el('option', { value: n, textContent: n })));
+    sel.value = selected || '';
+}
+
+function mergeDeep(def, src) {
+    if (!src || typeof src !== 'object') return def;
+    Object.keys(def).forEach(k => {
+        if (!(k in src)) return;
+        if (def[k] && typeof def[k] === 'object' && !Array.isArray(def[k])) def[k] = mergeDeep(def[k], src[k]);
+        else if (typeof src[k] === typeof def[k] && Array.isArray(src[k]) === Array.isArray(def[k])) def[k] = src[k];
+    });
+    return def;
+}
+
+function saveProfile() {
+    const cfg = readConfigForm();
+    if (!cfg) return;
+    const name = (prompt('Nombre del perfil (por ejemplo «Adultos laborales»):') || '').trim();
+    if (!name) return;
+    const all = loadProfiles();
+    if (all[name] && !confirm('Ya existe un perfil con ese nombre. ¿Reemplazarlo?')) return;
+    const copy = JSON.parse(JSON.stringify(cfg));
+    delete copy.device;
+    all[name] = copy;
+    if (storeProfiles(all)) refreshProfileSelect(name);
+}
+
+function loadProfile() {
+    const name = $('cfg-profile').value;
+    const device = $('cfg-device').value;
+    let cfg = defaultConfig();
+    if (name) {
+        const saved = loadProfiles()[name];
+        if (!saved) { alert('No se encontró el perfil.'); return; }
+        cfg = mergeDeep(cfg, saved);
+        if (!Array.isArray(cfg.order) || cfg.order.length !== TEST_KEYS.length || !TEST_KEYS.every(k => cfg.order.includes(k))) cfg.order = TEST_KEYS.slice();
+    }
+    cfg.device = device;
+    fillConfigForm(cfg);
+}
+
+function deleteProfile() {
+    const name = $('cfg-profile').value;
+    if (!name) { alert('Elija primero un perfil para eliminarlo.'); return; }
+    if (!confirm(`¿Eliminar el perfil «${name}»?`)) return;
+    const all = loadProfiles();
+    delete all[name];
+    if (storeProfiles(all)) refreshProfileSelect();
+}
+
+// --- Cronómetro y límite de tiempo ---
+const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+function tickTimer() {
+    if (!activeTest || !config) return;
+    const k = activeTest, tc = config.tests[k];
+    const total = elapsedMs[k] + (Date.now() - startTime);
+    const limitMs = tc.limitMin * 60000;
+    const timerEl = $('timer-' + k);
+    if (config.timerVisible) {
+        const secs = limitMs ? Math.max(0, Math.ceil((limitMs - total) / 1000)) : Math.floor(total / 1000);
+        timerEl.textContent = (limitMs ? '⏱ Tiempo restante ' : '⏱ Tiempo ') + mmss(secs);
+        timerEl.style.display = '';
+    } else {
+        timerEl.style.display = 'none';
+    }
+    if (limitMs && total >= limitMs && !limitFired[k]) {
+        limitFired[k] = true;
+        onLimitReached(k);
+    }
+}
+
+function onLimitReached(k) {
+    const min = config.tests[k].limitMin;
+    if (config.limitAction === 'cerrar') {
+        saveTestResult(k);   // guarda lo realizado y vuelve al menú
+        alert(`Se cumplió el tiempo límite (${min} min) de «${TESTS[k].short}». Se guardó lo realizado.`);
+    } else {
+        $('limit-note-' + k).textContent = `⏰ Se cumplió el tiempo límite (${min} min).`;
+    }
+}
+
+// --- Parámetros usados, para el informe ---
+function paramLines(k) {
+    const t = config.tests[k], lines = [];
+    if (k === 'house') {
+        lines.push(`Color: ${t.color ? 'permitido' : 'solo grafito'}`, `Goma: ${t.eraser ? 'permitida' : 'no permitida'}`);
+    } else if (k === 'constellation') {
+        lines.push(t.mode === 'fija'
+            ? `Elementos: paleta fija (círculos: ${t.circles.join(', ') || '—'}; rectángulos: ${t.rects.join(', ') || '—'})`
+            : 'Elementos: rótulos escritos por el evaluado');
+        lines.push(`Máximo de elementos: ${t.maxItems || 'sin límite'}`);
+    } else if (k === 'color') {
+        lines.push(t.paletteMode === 'fija'
+            ? `Paleta: restringida (${COLOR_PALETTE.filter(c => t.colors.includes(c.id)).map(c => c.name).join(', ')})`
+            : 'Paleta: libre');
+        lines.push('Herramientas: ' + [t.tools.fluid && 'trazo continuo', t.tools.splash && 'mancha / textura'].filter(Boolean).join(', '));
+    }
+    lines.push(`Cronómetro visible para el evaluado: ${config.timerVisible ? 'sí' : 'no'}`);
+    return lines;
+}
+
+function timeMeta(d) {
+    let s = `Tiempo de ejecución: ${fmtTime(d.time)}`;
+    if (d.limitMin) s += ` (límite ${d.limitMin} min: ${d.limitReached ? 'alcanzado' : 'no alcanzado'})`;
+    return s;
+}
+
 // ---------- GUARDADO ----------
 function saveTestResult(type) {
     leaveTest();
@@ -645,7 +1069,14 @@ function saveTestResult(type) {
     else if (type === 'color') img = $('colorCanvas').toDataURL('image/png');
     else img = $('mazeCanvas').toDataURL('image/png');
 
-    testData[type] = { img, time: Math.round(elapsedMs[type] / 1000) };
+    testData[type] = {
+        img,
+        time: Math.round(elapsedMs[type] / 1000),
+        limitMin: config.tests[type].limitMin,
+        limitReached: limitFired[type],
+        consigna: config.tests[type].consigna,
+        params: paramLines(type)
+    };
     if (type === 'maze') {
         testData.maze.seed = mazeSeed;
         testData.maze.level = MAZE_LEVELS[mazeLevel].label;
@@ -681,13 +1112,14 @@ function obsBlock(key) {
 }
 
 function finishAll() {
-    const done = TEST_KEYS.filter(k => testData[k]);
+    const keys = activeKeys();
+    const done = keys.filter(k => testData[k]);
     if (!done.length) {
         alert('Guarde al menos una prueba antes de generar el informe.');
         return;
     }
-    const missing = TEST_KEYS.filter(k => !testData[k]).map(k => TESTS[k].short);
-    const unsaved = TEST_KEYS.filter(k => dirty[k]).map(k => TESTS[k].short);
+    const missing = keys.filter(k => !testData[k]).map(k => TESTS[k].short);
+    const unsaved = keys.filter(k => dirty[k]).map(k => TESTS[k].short);
     let msg = '';
     if (missing.length) msg += 'Pruebas sin realizar: ' + missing.join(', ') + '.\n';
     if (unsaved.length) msg += 'Cambios sin guardar en: ' + unsaved.join(', ') + ' (el informe usará la última versión guardada).\n';
@@ -696,20 +1128,24 @@ function finishAll() {
     $('rep-name').textContent = patient.name;
     $('rep-id').textContent = patient.id;
     $('rep-age').textContent = patient.age;
-    $('rep-device').textContent = patient.device;
+    $('rep-device').textContent = config.device;
     $('rep-date').textContent = new Date().toLocaleDateString('es-UY');
 
     const container = $('rep-results-container');
     container.innerHTML = '';
-    TEST_KEYS.forEach((k, i) => {
+    let num = 0;
+    keys.forEach(k => {
         const d = testData[k];
         if (!d) return;
+        num++;
         const sec = el('div', { className: 'report-section' });
-        sec.appendChild(el('h4', { textContent: `${i + 1}. ${TESTS[k].title}` }));
-        let meta = `Tiempo de ejecución: ${fmtTime(d.time)}`;
+        sec.appendChild(el('h4', { textContent: `${num}. ${TESTS[k].title}` }));
+        let meta = timeMeta(d);
         if (k === 'maze') meta += mazeMeta(d);
         sec.appendChild(el('p', { className: 'report-meta', textContent: meta }));
         if (k === 'maze') sec.appendChild(el('p', { className: 'report-meta', textContent: mazeTraceMeta(d) }));
+        sec.appendChild(el('p', { className: 'report-meta', textContent: 'Consigna: ' + (d.consigna ? `"${d.consigna}"` : '(sin consigna en pantalla)') }));
+        if (d.params.length) sec.appendChild(el('p', { className: 'report-meta', textContent: 'Parámetros: ' + d.params.join(' | ') }));
         sec.appendChild(el('img', { className: 'img-result', src: d.img, alt: TESTS[k].short }));
         sec.appendChild(obsBlock(k));
         container.appendChild(sec);
@@ -722,11 +1158,10 @@ function finishAll() {
     switchScreen('screen-report');
 }
 
-function dataUrlToBytes(dataUrl) {
-    const bin = atob(dataUrl.split(',')[1]);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
+// Bytes de una imagen (data: URL) leídos por el propio navegador, sin decodificar base64 a mano
+async function dataUrlToBytes(dataUrl) {
+    const res = await fetch(dataUrl);
+    return new Uint8Array(await res.arrayBuffer());
 }
 
 function downloadBlob(blob, filename) {
@@ -763,7 +1198,7 @@ async function exportToWord() {
         ] }),
         new Paragraph({ children: [
             new TextRun({ text: 'Dispositivo de administración: ', bold: true }),
-            new TextRun(patient.device)
+            new TextRun(config.device)
         ] }),
         new Paragraph({ spacing: { after: 300 }, children: [
             new TextRun({ text: 'Fecha de Evaluación: ', bold: true }),
@@ -771,18 +1206,25 @@ async function exportToWord() {
         ] })
     ];
 
-    TEST_KEYS.forEach((k, i) => {
+    const note = (text) => new Paragraph({ children: [new TextRun({ text, italics: true, color: '64748B' })] });
+    const imgBytes = {};
+    for (const k of activeKeys()) if (testData[k]) imgBytes[k] = await dataUrlToBytes(testData[k].img);
+    let num = 0;
+    activeKeys().forEach(k => {
         const d = testData[k];
         if (!d) return;
-        let meta = `Tiempo de ejecución: ${fmtTime(d.time)}`;
+        num++;
+        let meta = timeMeta(d);
         if (k === 'maze') meta += mazeMeta(d);
         children.push(
-            new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(`${i + 1}. ${TESTS[k].title}`)] }),
-            new Paragraph({ children: [new TextRun({ text: meta, italics: true, color: '64748B' })] }),
-            ...(k === 'maze' ? [new Paragraph({ children: [new TextRun({ text: mazeTraceMeta(d), italics: true, color: '64748B' })] })] : []),
+            new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(`${num}. ${TESTS[k].title}`)] }),
+            note(meta),
+            ...(k === 'maze' ? [note(mazeTraceMeta(d))] : []),
+            note('Consigna: ' + (d.consigna ? `"${d.consigna}"` : '(sin consigna en pantalla)')),
+            ...(d.params.length ? [note('Parámetros: ' + d.params.join(' | '))] : []),
             new Paragraph({
                 spacing: { before: 120, after: 160 },
-                children: [new ImageRun({ data: dataUrlToBytes(d.img), transformation: { width: 580, height: 338 } })]
+                children: [new ImageRun({ data: imgBytes[k], transformation: { width: 580, height: 338 } })]
             })
         );
         if (obs[k].trim()) {
@@ -804,27 +1246,34 @@ async function exportToWord() {
 
 // ---------- Nuevo evaluado ----------
 function resetAll() {
-    if (!confirm('Se borrarán todos los datos y producciones del evaluado actual. ¿Iniciar un nuevo evaluado?')) return;
-    patient = { name: '', id: '', age: '', device: '' };
-    TEST_KEYS.forEach(k => { testData[k] = null; elapsedMs[k] = 0; dirty[k] = false; obs[k] = ''; });
+    if (!confirm('Se borrarán todos los datos y producciones del evaluado actual. La configuración se conserva. ¿Iniciar un nuevo evaluado?')) return;
+    patient = { name: '', id: '', age: '' };
+    TEST_KEYS.forEach(k => {
+        testData[k] = null; elapsedMs[k] = 0; dirty[k] = false; obs[k] = '';
+        limitFired[k] = false;
+        $('limit-note-' + k).textContent = '';
+    });
     obs.general = '';
     activeTest = null;
+    evaluationStarted = false;
     clearCanvas($('houseCanvas'));
     clearCanvas($('colorCanvas'));
     wipeConstellation();
-    $('maze-seed').value = '';
-    mazeHasPath = false;
-    newMaze();
+    applyMaze(mazeSeed, mazeLevel);   // mismo laberinto configurado, sin trazo
     dirty.maze = false;
-    ['p-name', 'p-id', 'p-age', 'p-device'].forEach(id => { $(id).value = ''; });
+    ['p-name', 'p-id', 'p-age'].forEach(id => { $(id).value = ''; });
     refreshMenu();
     switchScreen('screen-patient');
 }
 
 // ---------- Inicialización ----------
+config = defaultConfig();
+buildConfigUI();
 initHouseCanvas();
 initColorCanvas();
 initMazeCanvas();
+applyConfigToUI();
+setInterval(tickTimer, 500);
 
 $('constellation-workspace').addEventListener('pointerdown', (e) => {
     if (e.target === e.currentTarget) selectItem(null);
