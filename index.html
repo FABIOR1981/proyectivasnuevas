@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PsiMatrix - Suite Proyectiva Digital</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>PsiMatrix Suite</h1>
+        <p class="subtitle">Plataforma Digital de Evaluación y Producción Proyectiva Clínica</p>
+    </header>
+
+    <!-- Pantalla 1: Datos del evaluado -->
+    <div id="screen-patient" class="screen active">
+        <h2>Registro del Evaluado</h2>
+        <p class="subtitle" style="margin-bottom: 20px;">Ingrese los datos del evaluado para iniciar el protocolo de pruebas.</p>
+        <div class="active-cfg">
+            <div><strong>Configuración activa:</strong> <span id="active-cfg-summary"></span></div>
+            <button class="secondary" type="button" onclick="openEvaluatorConfig()">Configuración (evaluador)</button>
+        </div>
+        <div class="form-group">
+            <label for="p-name">Nombre y Apellido:</label>
+            <input type="text" id="p-name" placeholder="Ej. Roberto Sánchez" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="p-id">Documento / ID:</label>
+            <input type="text" id="p-id" placeholder="Ej. 3.456.789-2" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="p-age">Edad:</label>
+            <input type="number" id="p-age" placeholder="Ej. 38" min="0" max="120">
+        </div>
+        <div style="margin-top: 30px;">
+            <button onclick="startEvaluation()">Continuar</button>
+        </div>
+    </div>
+
+
+    <!-- Sin configuración activa -->
+    <div id="screen-noconfig" class="screen">
+        <h2>No hay una configuración activa</h2>
+        <p class="subtitle" style="margin-bottom: 25px;">El evaluador debe definir la configuración de la evaluación antes de comenzar.</p>
+        <a class="btn-link" href="configuracion.html">Ir a la configuración</a>
+    </div>
+
+    <!-- Pantalla 2: Menú de pruebas -->
+    <div id="screen-menu" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+            <h2 style="margin:0;">Batería de Pruebas</h2>
+            <span style="font-size: 0.9rem; color: var(--text-muted);">Evaluado: <strong id="lbl-patient-name" style="color: var(--brand-primary);"></strong></span>
+        </div>
+        <p class="subtitle">Seleccione una técnica para administrar. Se muestran en el orden configurado.</p>
+
+        <div class="test-grid" id="test-grid">
+            <div class="test-card" id="card-house" role="button" tabindex="0" onclick="loadTest('house')">
+                <h3>Test de la Casa</h3>
+                <p>Espacio habitable y estructura defensiva.</p>
+            </div>
+            <div class="test-card" id="card-constellation" role="button" tabindex="0" onclick="loadTest('constellation')">
+                <h3>Constelación Familiar</h3>
+                <p>Dinámica vincular y distribución espacial.</p>
+            </div>
+            <div class="test-card" id="card-color" role="button" tabindex="0" onclick="loadTest('color')">
+                <h3>Dinámica Cromática</h3>
+                <p>Expresión afectiva y flujo pulsional.</p>
+            </div>
+            <div class="test-card" id="card-maze" role="button" tabindex="0" onclick="loadTest('maze')">
+                <h3>Laberinto Estructural</h3>
+                <p>Planificación y control de impulsos (Adultos).</p>
+            </div>
+        </div>
+
+        <div class="actions-bar">
+            <button class="secondary" onclick="switchScreen('screen-patient')">Modificar Datos</button>
+            <button onclick="finishAll()">Finalizar y Generar Informe</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 3A: Test de la Casa -->
+    <div id="screen-house" class="screen">
+        <h2>Test de la Casa (Espacio Habitable)</h2>
+        <p class="subtitle consigna" id="consigna-house"></p>
+        <div class="test-status"><span class="test-timer" id="timer-house"></span><span class="limit-note" id="limit-note-house"></span></div>
+        <div class="toolbar">
+            <button id="btn-house-pen" data-tool="pen" class="active" onclick="setHouseTool('pen', this)">Lápiz fino</button>
+            <button id="btn-house-brush" data-tool="brush" onclick="setHouseTool('brush', this)">Pincel</button>
+            <button id="btn-house-eraser" data-tool="eraser" onclick="setHouseTool('eraser', this)">Goma</button>
+            <label id="lbl-house-color">Color: <input type="color" id="house-color" value="#0f172a"></label>
+            <button class="secondary" onclick="confirmClear('houseCanvas', 'house')">Limpiar Lienzo</button>
+        </div>
+        <div class="canvas-container">
+            <canvas id="houseCanvas" width="1080" height="630"></canvas>
+        </div>
+        <div class="actions-bar">
+            <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
+            <button onclick="saveTestResult('house')">Guardar y Continuar</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 3B: Constelación Familiar -->
+    <div id="screen-constellation" class="screen">
+        <h2>Constelación Familiar / Vincular</h2>
+        <p class="subtitle consigna" id="consigna-constellation"></p>
+        <div class="test-status"><span class="test-timer" id="timer-constellation"></span><span class="limit-note" id="limit-note-constellation"></span></div>
+        <div class="constellation-layout">
+            <div class="constellation-palette">
+                <p class="palette-title">Elementos:</p>
+                <div id="palette-items"></div>
+                <div class="palette-actions">
+                    <button class="secondary" onclick="renameSelected()">Renombrar seleccionado</button>
+                    <button class="secondary" onclick="deleteSelected()">Eliminar seleccionado</button>
+                    <button class="secondary" onclick="clearConstellation()">Limpiar Plano</button>
+                </div>
+                <p class="hint">Arrastre para mover. Toque un elemento para seleccionarlo; doble clic para renombrarlo.</p>
+            </div>
+            <div class="canvas-container">
+                <div id="constellation-workspace"></div>
+            </div>
+        </div>
+        <div class="actions-bar">
+            <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
+            <button onclick="saveTestResult('constellation')">Guardar y Continuar</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 3C: Dinámica Cromática -->
+    <div id="screen-color" class="screen">
+        <h2>Dinámica Cromática y Expresión Emocional</h2>
+        <p class="subtitle consigna" id="consigna-color"></p>
+        <div class="test-status"><span class="test-timer" id="timer-color"></span><span class="limit-note" id="limit-note-color"></span></div>
+        <div class="toolbar">
+            <button id="btn-color-fluid" data-tool="fluid" class="active" onclick="setColorTool('fluid', this)">Trazo Continuo</button>
+            <button id="btn-color-splash" data-tool="splash" onclick="setColorTool('splash', this)">Mancha / Textura</button>
+            <label id="lbl-paint-color">Color: <input type="color" id="paint-color" value="#0ea5e9"></label>
+            <span id="paint-swatches"></span>
+            <button class="secondary" onclick="confirmClear('colorCanvas', 'color')">Limpiar Lienzo</button>
+        </div>
+        <div class="canvas-container">
+            <canvas id="colorCanvas" width="1080" height="630"></canvas>
+        </div>
+        <div class="actions-bar">
+            <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
+            <button onclick="saveTestResult('color')">Guardar y Continuar</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 3D: Laberinto -->
+    <div id="screen-maze" class="screen">
+        <h2>Laberinto Estructural Complejo (Adultos)</h2>
+        <p class="subtitle consigna" id="consigna-maze"></p>
+        <div class="test-status"><span class="test-timer" id="timer-maze"></span><span class="limit-note" id="limit-note-maze"></span></div>
+        <div class="toolbar">
+            <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="6" value="3"></label>
+            <button class="secondary" onclick="clearMazePath()">Borrar trazo</button>
+            <button class="accent" onclick="toggleMazeFullscreen()">⛶ Pantalla completa</button>
+        </div>
+        <div id="maze-stage">
+            <div id="maze-fs-bar">
+                <button class="secondary" onclick="clearMazePath()">Borrar trazo</button>
+                <button onclick="toggleMazeFullscreen()">Salir de pantalla completa</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="mazeCanvas" width="1080" height="630"></canvas>
+            </div>
+        </div>
+        <p class="hint" id="maze-info" style="margin-top: 10px;"></p>
+        <div class="actions-bar">
+            <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
+            <button onclick="saveTestResult('maze')">Guardar y Continuar</button>
+        </div>
+    </div>
+
+    <!-- Pantalla 4: Informe final -->
+    <div id="screen-report" class="screen">
+        <h2>Protocolo e Informe Clínico Final</h2>
+        <p class="subtitle" style="margin-bottom: 20px;">Resumen integrado de las producciones proyectivas del evaluado.</p>
+
+        <div class="report-preview" id="report-content">
+            <div class="report-header">
+                <h3>PsiMatrix - Reporte Proyectivo Digital</h3>
+                <p><strong>Evaluado:</strong> <span id="rep-name"></span> | <strong>ID:</strong> <span id="rep-id"></span> | <strong>Edad:</strong> <span id="rep-age"></span></p>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Dispositivo de administración: <span id="rep-device"></span></p>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Fecha de Evaluación: <span id="rep-date"></span></p>
+            </div>
+            <div id="rep-results-container"></div>
+        </div>
+
+        <div class="actions-bar">
+            <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
+            <div class="actions-group">
+                <button class="secondary" onclick="resetAll()">Nuevo evaluado</button>
+                <button class="secondary" onclick="window.print()">Imprimir / Guardar PDF</button>
+                <button onclick="exportToWord()">Exportar Informe a Word (.docx)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Librería para generar .docx real (con imágenes incrustadas) -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/almacenamiento.js"></script>
+<script src="js/acceso.js"></script>
+<script src="js/evaluacion.js"></script>
+
+</body>
+</html>
