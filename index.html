@@ -179,6 +179,7 @@
         .toolbar button.accent { background: var(--brand-accent); color: #0f172a; }
         .toolbar button.accent:hover { background: #2dd4bf; }
         .toolbar input[type="color"] { width: 38px; height: 34px; padding: 0; border: none; background: none; cursor: pointer; }
+        .toolbar select { padding: 6px 10px; font-size: 0.85rem; }
         .toolbar input[type="range"] { width: 120px; padding: 0; }
         .toolbar input[type="number"] { width: 110px; padding: 6px 10px; font-size: 0.85rem; }
 
@@ -497,6 +498,13 @@
         <p class="subtitle" style="margin-bottom: 20px;">Consigna: <em>"Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja)."</em></p>
         <div class="toolbar">
             <label>Grosor de trazo: <input type="range" id="maze-size" min="2" max="6" value="3"></label>
+            <label>Dificultad:
+                <select id="maze-level" onchange="newMaze()">
+                    <option value="facil">Fácil</option>
+                    <option value="media" selected>Media</option>
+                    <option value="dificil">Difícil</option>
+                </select>
+            </label>
             <label>Nº de laberinto (1 a 9999): <input type="number" id="maze-seed" min="1" max="9999" placeholder="al azar"></label>
             <button class="secondary" onclick="newMaze()">Generar laberinto</button>
             <button class="secondary" onclick="randomMaze()">🎲 Al azar</button>
@@ -512,7 +520,8 @@
                 <canvas id="mazeCanvas" width="1080" height="630"></canvas>
             </div>
         </div>
-        <p class="hint" style="margin-top: 10px;">Hay 9999 laberintos numerados. Escriba un número y pulse «Generar laberinto» para obtener siempre el mismo diseño (útil para administrar el mismo laberinto a distintos evaluados); con el campo vacío o con «Al azar» se elige uno cualquiera. El número queda registrado en el informe.</p>
+        <p class="hint" id="maze-info" style="margin-top: 10px;"></p>
+        <p class="hint" style="margin-top: 6px;">Cada nivel de dificultad tiene 9999 laberintos numerados; se descartan automáticamente los demasiado directos. Escriba un número y pulse «Generar laberinto» para obtener siempre el mismo diseño (útil para administrar el mismo laberinto a distintos evaluados); con el campo vacío o con «Al azar» se elige uno cualquiera. El nivel y el número quedan registrados en el informe.</p>
         <div class="actions-bar">
             <button class="secondary" onclick="backToMenu()">Regresar al Menú</button>
             <button onclick="saveTestResult('maze')">Guardar y Continuar</button>
@@ -882,10 +891,19 @@
     }
 
     // ---------- LABERINTO ----------
-    const COLS = 25, ROWS = 14;
-    const MAZE_MAX = 9999;   // laberintos numerados del 1 al MAZE_MAX
+    // Cada nivel tiene su propia cuadrícula y una franja de dificultad aceptable, medida sobre el
+    // recorrido óptimo (celdas de la entrada a la salida vs. el mínimo posible) y las bifurcaciones
+    // que hay en ese recorrido. Los laberintos demasiado directos se descartan de forma
+    // determinista: el mismo nivel + el mismo número dan siempre el mismo laberinto.
+    const MAZE_MAX = 9999;   // por nivel: laberintos numerados del 1 al MAZE_MAX
+    const MAZE_LEVELS = {
+        facil:   { label: 'Fácil',   cols: 16, rows: 9,  loops: 3, ratio: [2.0, 3.0], minJunctions: 6 },
+        media:   { label: 'Media',   cols: 20, rows: 11, loops: 3, ratio: [2.8, 3.8], minJunctions: 9 },
+        dificil: { label: 'Difícil', cols: 25, rows: 14, loops: 2, ratio: [3.6, 5.0], minJunctions: 13 }
+    };
+    let COLS = 20, ROWS = 11;
+    let mazeCells = null, mazeSeed = 1, mazeLevel = 'media', mazeInfo = null, mazeHasPath = false;
     const randomMazeSeed = () => 1 + Math.floor(Math.random() * MAZE_MAX);
-    let mazeCells = null, mazeSeed = 1, mazeHasPath = false;
 
     function mulberry32(a) {
         return function () {
@@ -896,13 +914,12 @@
         };
     }
 
-    function generateMaze(seed) {
-        const rnd = mulberry32(seed);
+    function buildMaze(rnd, cols, rows, loops) {
         const cells = [];
-        for (let r = 0; r < ROWS; r++)
-            for (let c = 0; c < COLS; c++)
+        for (let r = 0; r < rows; r++)
+            for (let c = 0; c < cols; c++)
                 cells.push({ r, c, w: { t: true, r: true, b: true, l: true }, v: false });
-        const at = (r, c) => cells[r * COLS + c];
+        const at = (r, c) => cells[r * cols + c];
 
         // Recorrido en profundidad (backtracker): laberinto perfecto
         const stack = [at(0, 0)];
@@ -911,8 +928,8 @@
             const cur = stack[stack.length - 1];
             const nb = [];
             if (cur.r > 0 && !at(cur.r - 1, cur.c).v) nb.push([at(cur.r - 1, cur.c), 't', 'b']);
-            if (cur.c < COLS - 1 && !at(cur.r, cur.c + 1).v) nb.push([at(cur.r, cur.c + 1), 'r', 'l']);
-            if (cur.r < ROWS - 1 && !at(cur.r + 1, cur.c).v) nb.push([at(cur.r + 1, cur.c), 'b', 't']);
+            if (cur.c < cols - 1 && !at(cur.r, cur.c + 1).v) nb.push([at(cur.r, cur.c + 1), 'r', 'l']);
+            if (cur.r < rows - 1 && !at(cur.r + 1, cur.c).v) nb.push([at(cur.r + 1, cur.c), 'b', 't']);
             if (cur.c > 0 && !at(cur.r, cur.c - 1).v) nb.push([at(cur.r, cur.c - 1), 'l', 'r']);
             if (!nb.length) { stack.pop(); continue; }
             const [n, a, b] = nb[Math.floor(rnd() * nb.length)];
@@ -922,16 +939,56 @@
 
         // Pasillos alternativos: solo paredes interiores, abriendo ambos lados
         let opened = 0, tries = 0;
-        while (opened < 15 && tries < 1000) {
+        while (opened < loops && tries < 1000) {
             tries++;
             const cell = cells[Math.floor(rnd() * cells.length)];
             if (rnd() < 0.5) {
-                if (cell.c < COLS - 1 && cell.w.r) { cell.w.r = false; at(cell.r, cell.c + 1).w.l = false; opened++; }
+                if (cell.c < cols - 1 && cell.w.r) { cell.w.r = false; at(cell.r, cell.c + 1).w.l = false; opened++; }
             } else {
-                if (cell.r < ROWS - 1 && cell.w.b) { cell.w.b = false; at(cell.r + 1, cell.c).w.t = false; opened++; }
+                if (cell.r < rows - 1 && cell.w.b) { cell.w.b = false; at(cell.r + 1, cell.c).w.t = false; opened++; }
             }
         }
         return cells;
+    }
+
+    // Recorrido óptimo (BFS) y bifurcaciones a lo largo de ese recorrido
+    function analyzeMaze(cells, cols, rows) {
+        const prev = new Array(cells.length).fill(-1);
+        const queue = [0];
+        prev[0] = 0;
+        for (let q = 0; q < queue.length; q++) {
+            const i = queue[q], c = cells[i];
+            const ns = [];
+            if (!c.w.t) ns.push(i - cols);
+            if (!c.w.b) ns.push(i + cols);
+            if (!c.w.l) ns.push(i - 1);
+            if (!c.w.r) ns.push(i + 1);
+            ns.forEach(n => { if (prev[n] < 0) { prev[n] = i; queue.push(n); } });
+        }
+        const path = [];
+        for (let i = cells.length - 1; i !== 0; i = prev[i]) path.push(i);
+        path.push(0);
+        let junctions = 0;
+        path.slice(1, -1).forEach(i => {
+            const open = Object.values(cells[i].w).filter(x => !x).length;
+            if (open >= 3) junctions++;
+        });
+        return { length: path.length, junctions, ratio: path.length / (cols + rows - 1) };
+    }
+
+    function generateMaze(seed, levelKey) {
+        const cfg = MAZE_LEVELS[levelKey];
+        let best = null, bestDev = Infinity;
+        for (let attempt = 0; attempt < 600; attempt++) {
+            const rnd = mulberry32((Math.imul(seed, 2654435761) + Math.imul(attempt, 40503)) >>> 0);
+            const cells = buildMaze(rnd, cfg.cols, cfg.rows, cfg.loops);
+            const info = analyzeMaze(cells, cfg.cols, cfg.rows);
+            const dev = Math.max(0, cfg.ratio[0] - info.ratio, info.ratio - cfg.ratio[1]) +
+                        Math.max(0, cfg.minJunctions - info.junctions) / 10;
+            if (dev === 0) return { cells, info };
+            if (dev < bestDev) { bestDev = dev; best = { cells, info }; }
+        }
+        return best;   // no debería ocurrir: se devuelve el más cercano a la franja
     }
 
     function drawMaze() {
@@ -961,12 +1018,28 @@
         mazeHasPath = false;
     }
 
+    function applyMaze(seed, levelKey) {
+        const cfg = MAZE_LEVELS[levelKey];
+        mazeLevel = levelKey;
+        mazeSeed = seed;
+        COLS = cfg.cols;
+        ROWS = cfg.rows;
+        const g = generateMaze(seed, levelKey);
+        mazeCells = g.cells;
+        mazeInfo = g.info;
+        $('maze-level').value = levelKey;
+        $('maze-seed').value = seed;
+        $('maze-info').textContent = `Dificultad ${cfg.label} · Laberinto Nº ${seed} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
+        drawMaze();
+    }
+
     function randomMaze() {
         $('maze-seed').value = '';
         newMaze();
     }
 
     function newMaze() {
+        const level = $('maze-level').value;
         const raw = $('maze-seed').value.trim();
         let seed;
         if (raw === '') {
@@ -975,15 +1048,16 @@
             seed = Number(raw);
             if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
                 alert(`Ingrese un número de laberinto entero entre 1 y ${MAZE_MAX}, o deje el campo vacío para elegir uno al azar.`);
+                $('maze-level').value = mazeLevel;
                 $('maze-seed').focus();
                 return;
             }
         }
-        if (mazeHasPath && !confirm('Se generará un laberinto nuevo y se perderá el trazo actual. ¿Continuar?')) return;
-        mazeSeed = seed;
-        $('maze-seed').value = seed;
-        mazeCells = generateMaze(seed);
-        drawMaze();
+        if (mazeHasPath && !confirm('Se generará un laberinto nuevo y se perderá el trazo actual. ¿Continuar?')) {
+            $('maze-level').value = mazeLevel;
+            return;
+        }
+        applyMaze(seed, level);
         if (testData.maze) dirty.maze = true;
     }
 
@@ -996,10 +1070,7 @@
     function initMazeCanvas() {
         const c = $('mazeCanvas');
         c.width = CW; c.height = CH;
-        mazeSeed = randomMazeSeed();
-        $('maze-seed').value = mazeSeed;
-        mazeCells = generateMaze(mazeSeed);
-        drawMaze();
+        applyMaze(randomMazeSeed(), $('maze-level').value);
         const ctx = c.getContext('2d');
         bindDrawing(c, {
             draw: (a, b) => {
@@ -1017,6 +1088,10 @@
                 dirty.maze = true;
             }
         });
+    }
+
+    function mazeMeta(d) {
+        return ` | Dificultad ${d.level} | Laberinto Nº ${d.seed} | Recorrido óptimo: ${d.optimal} celdas`;
     }
 
     // Pantalla completa del laberinto: modo fijo por CSS (funciona en cualquier navegador)
@@ -1076,7 +1151,11 @@
         else img = $('mazeCanvas').toDataURL('image/png');
 
         testData[type] = { img, time: Math.round(elapsedMs[type] / 1000) };
-        if (type === 'maze') testData.maze.seed = mazeSeed;
+        if (type === 'maze') {
+            testData.maze.seed = mazeSeed;
+            testData.maze.level = MAZE_LEVELS[mazeLevel].label;
+            testData.maze.optimal = mazeInfo.length;
+        }
         dirty[type] = false;
         backToMenu(true);
     }
@@ -1127,7 +1206,7 @@
             const sec = el('div', { className: 'report-section' });
             sec.appendChild(el('h4', { textContent: `${i + 1}. ${TESTS[k].title}` }));
             let meta = `Tiempo de ejecución: ${fmtTime(d.time)}`;
-            if (k === 'maze') meta += ` | Laberinto Nº ${d.seed}`;
+            if (k === 'maze') meta += mazeMeta(d);
             sec.appendChild(el('p', { className: 'report-meta', textContent: meta }));
             sec.appendChild(el('img', { className: 'img-result', src: d.img, alt: TESTS[k].short }));
             sec.appendChild(obsBlock(k));
@@ -1194,7 +1273,7 @@
             const d = testData[k];
             if (!d) return;
             let meta = `Tiempo de ejecución: ${fmtTime(d.time)}`;
-            if (k === 'maze') meta += ` | Laberinto Nº ${d.seed}`;
+            if (k === 'maze') meta += mazeMeta(d);
             children.push(
                 new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(`${i + 1}. ${TESTS[k].title}`)] }),
                 new Paragraph({ children: [new TextRun({ text: meta, italics: true, color: '64748B' })] }),
