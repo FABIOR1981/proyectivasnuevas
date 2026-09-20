@@ -498,7 +498,7 @@ function onFullscreenChange() {
 
 // ---------- APLICACIÓN DE LA CONFIGURACIÓN ----------
 // La configuración la define el evaluador en configuracion.html y llega por la capa de almacenamiento
-// (storage.js). Durante la evaluación no se puede modificar desde esta página.
+// (almacenamiento.js). Durante la evaluación no se puede modificar desde esta página.
 let config = null;                 // configuración vigente
 const limitFired = { house: false, constellation: false, color: false, maze: false };
 
@@ -821,6 +821,28 @@ async function exportToWord() {
     downloadBlob(blob, `PsiMatrix_Informe_${slug}.docx`);
 }
 
+// ---------- Acceso a la configuración (evaluador) ----------
+let leavingForConfig = false;
+
+const hasEvaluationData = () => TEST_KEYS.some(k => testData[k] || dirty[k]);
+
+function configSummary(cfg) {
+    const names = cfg.order.filter(k => cfg.tests[k].enabled).map(k => TESTS[k].short);
+    const parts = [cfg.device || 'sin dispositivo', names.join(' → ')];
+    if (cfg.tests.maze.enabled) parts.push(`Laberinto ${MAZE_LEVELS[cfg.tests.maze.level].label} Nº ${cfg.tests.maze.seed}`);
+    if (TEST_KEYS.some(k => cfg.tests[k].enabled && cfg.tests[k].limitMin)) parts.push('con límites de tiempo');
+    return parts.join(' · ');
+}
+
+async function openEvaluatorConfig() {
+    let allowed = false;
+    try { allowed = await access.request('configuracion'); } catch (e) { allowed = false; }
+    if (!allowed) return;
+    if (hasEvaluationData() && !confirm('Hay datos de la evaluación en curso que se perderán si sale a la configuración. ¿Continuar?')) return;
+    leavingForConfig = true;      // evita el aviso de "salir de la página" del navegador
+    location.href = 'configuracion.html';
+}
+
 // ---------- Nuevo evaluado ----------
 function resetAll() {
     if (!confirm('Se borrarán todos los datos y producciones del evaluado actual. La configuración se conserva. ¿Iniciar un nuevo evaluado?')) return;
@@ -866,6 +888,7 @@ window.addEventListener('resize', fitMazeCanvas);
 window.addEventListener('orientationchange', () => setTimeout(fitMazeCanvas, 200));
 
 window.addEventListener('beforeunload', (e) => {
+    if (leavingForConfig) return;
     if (patient.name || TEST_KEYS.some(k => testData[k] || dirty[k])) {
         e.preventDefault();
         e.returnValue = '';
@@ -878,6 +901,7 @@ async function init() {
     try { saved = await store.getActiveConfig(); } catch (e) { saved = null; }
     if (!saved) { switchScreen('screen-noconfig'); return; }
     config = normalizeConfig(saved);
+    $('active-cfg-summary').textContent = configSummary(config);
     initHouseCanvas();
     initColorCanvas();
     initMazeCanvas();

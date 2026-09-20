@@ -437,3 +437,21 @@ canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-act
 .cfg-status { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 600; }
 .cfg-status.ok { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid #14b8a6; }
 .cfg-status.error { background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid #f43f5e; }
+
+/* ---------- Configuración activa en el registro del evaluado ---------- */
+.active-cfg {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 25px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.active-cfg strong { color: var(--text-main); }
+.active-cfg button { padding: 8px 14px; font-size: 0.8rem; }

@@ -1,5 +1,5 @@
 // Página de configuración de la evaluación (uso del evaluador).
-// Depende de common.js (modelo y utilidades) y storage.js (dónde se guardan perfiles y configuración activa).
+// Depende de comun.js (modelo y utilidades) y almacenamiento.js (dónde se guardan perfiles y configuración activa).
 
 // --- Formulario de configuración ---
 function buildConfigUI() {
@@ -218,6 +218,13 @@ async function applyConfigAndGo(go) {
 
 // --- Inicio de la página ---
 async function initConfigPage() {
+    let allowed = false;
+    try { allowed = await access.request('configuracion'); } catch (e) { allowed = false; }
+    if (!allowed) {
+        $('screen-config').classList.remove('active');
+        $('cfg-denied').classList.add('active');
+        return;
+    }
     buildConfigUI();
     $('cfg-storage-info').textContent = store.describe();
     let active = null;

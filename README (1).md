@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PsiMatrix - Configuración de la evaluación</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
@@ -13,6 +13,13 @@
         <h1>PsiMatrix Suite</h1>
         <p class="subtitle">Configuración de la evaluación · uso del evaluador</p>
     </header>
+
+    <!-- Acceso denegado -->
+    <div id="cfg-denied" class="screen">
+        <h2>Acceso restringido</h2>
+        <p class="subtitle" style="margin-bottom: 25px;">Solo el evaluador puede modificar la configuración.</p>
+        <a class="btn-link" href="index.html">Volver a la evaluación</a>
+    </div>
 
     <!-- Configuración de la evaluación (uso del evaluador) -->
     <div id="screen-config" class="screen active">
@@ -203,9 +210,10 @@
 
 </div>
 
-<script src="js/common.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/config.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/almacenamiento.js"></script>
+<script src="js/acceso.js"></script>
+<script src="js/configuracion.js"></script>
 
 </body>
 </html>
