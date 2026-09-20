@@ -1,15 +1,5 @@
 // ---------- Constantes y estado ----------
 const CW = 1080, CH = 630;           // resolución interna de todos los lienzos
-const TEST_KEYS = ['house', 'constellation', 'color', 'maze'];
-const TESTS = {
-    house:         { title: 'Test de la Casa (Espacio Habitable)',        short: 'Test de la Casa' },
-    constellation: { title: 'Constelación Familiar / Vincular',           short: 'Constelación Familiar' },
-    color:         { title: 'Dinámica Cromática y Expresión Emocional',   short: 'Dinámica Cromática' },
-    maze:          { title: 'Laberinto Estructural Complejo (Adultos)',   short: 'Laberinto Estructural' }
-};
-
-const $ = (id) => document.getElementById(id);
-
 let patient = { name: '', id: '', age: '' };
 let testData = { house: null, constellation: null, color: null, maze: null };
 let elapsedMs = { house: 0, constellation: 0, color: 0, maze: 0 };
@@ -91,12 +81,8 @@ function startEvaluation() {
     patient.id = $('p-id').value.trim() || 'S/D';
     patient.age = age || 'S/D';
     $('lbl-patient-name').textContent = patient.name;
-    if (evaluationStarted) {          // solo se estaban corrigiendo los datos
-        refreshMenu();
-        switchScreen('screen-menu');
-    } else {
-        showConfig(false);
-    }
+    refreshMenu();
+    switchScreen('screen-menu');
 }
 
 function refreshMenu() {
@@ -333,107 +319,9 @@ function initColorCanvas() {
     });
 }
 
-// ---------- LABERINTO ----------
-// Cada nivel tiene su propia cuadrícula y una franja de dificultad aceptable, medida sobre el
-// recorrido óptimo (celdas de la entrada a la salida vs. el mínimo posible) y las bifurcaciones
-// que hay en ese recorrido. Los laberintos demasiado directos se descartan de forma
-// determinista: el mismo nivel + el mismo número dan siempre el mismo laberinto.
-const MAZE_MAX = 9999;   // por nivel: laberintos numerados del 1 al MAZE_MAX
-const MAZE_LEVELS = {
-    facil:   { label: 'Fácil',   cols: 16, rows: 9,  loops: 3, ratio: [2.0, 3.0], minJunctions: 6 },
-    media:   { label: 'Media',   cols: 20, rows: 11, loops: 3, ratio: [2.8, 3.8], minJunctions: 9 },
-    dificil: { label: 'Difícil', cols: 25, rows: 14, loops: 2, ratio: [3.6, 5.0], minJunctions: 13 }
-};
+// ---------- LABERINTO (dibujo, recorrido y pantalla completa) ----------
 let COLS = 20, ROWS = 11;
 let mazeCells = null, mazeSeed = 1, mazeLevel = 'media', mazeInfo = null, mazeHasPath = false;
-const randomMazeSeed = () => 1 + Math.floor(Math.random() * MAZE_MAX);
-
-function mulberry32(a) {
-    return function () {
-        a |= 0; a = (a + 0x6D2B79F5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
-function buildMaze(rnd, cols, rows, loops) {
-    const cells = [];
-    for (let r = 0; r < rows; r++)
-        for (let c = 0; c < cols; c++)
-            cells.push({ r, c, w: { t: true, r: true, b: true, l: true }, v: false });
-    const at = (r, c) => cells[r * cols + c];
-
-    // Recorrido en profundidad (backtracker): laberinto perfecto
-    const stack = [at(0, 0)];
-    at(0, 0).v = true;
-    while (stack.length) {
-        const cur = stack[stack.length - 1];
-        const nb = [];
-        if (cur.r > 0 && !at(cur.r - 1, cur.c).v) nb.push([at(cur.r - 1, cur.c), 't', 'b']);
-        if (cur.c < cols - 1 && !at(cur.r, cur.c + 1).v) nb.push([at(cur.r, cur.c + 1), 'r', 'l']);
-        if (cur.r < rows - 1 && !at(cur.r + 1, cur.c).v) nb.push([at(cur.r + 1, cur.c), 'b', 't']);
-        if (cur.c > 0 && !at(cur.r, cur.c - 1).v) nb.push([at(cur.r, cur.c - 1), 'l', 'r']);
-        if (!nb.length) { stack.pop(); continue; }
-        const [n, a, b] = nb[Math.floor(rnd() * nb.length)];
-        cur.w[a] = false; n.w[b] = false; n.v = true;
-        stack.push(n);
-    }
-
-    // Pasillos alternativos: solo paredes interiores, abriendo ambos lados
-    let opened = 0, tries = 0;
-    while (opened < loops && tries < 1000) {
-        tries++;
-        const cell = cells[Math.floor(rnd() * cells.length)];
-        if (rnd() < 0.5) {
-            if (cell.c < cols - 1 && cell.w.r) { cell.w.r = false; at(cell.r, cell.c + 1).w.l = false; opened++; }
-        } else {
-            if (cell.r < rows - 1 && cell.w.b) { cell.w.b = false; at(cell.r + 1, cell.c).w.t = false; opened++; }
-        }
-    }
-    return cells;
-}
-
-// Recorrido óptimo (BFS) y bifurcaciones a lo largo de ese recorrido
-function analyzeMaze(cells, cols, rows) {
-    const prev = new Array(cells.length).fill(-1);
-    const queue = [0];
-    prev[0] = 0;
-    for (let q = 0; q < queue.length; q++) {
-        const i = queue[q], c = cells[i];
-        const ns = [];
-        if (!c.w.t) ns.push(i - cols);
-        if (!c.w.b) ns.push(i + cols);
-        if (!c.w.l) ns.push(i - 1);
-        if (!c.w.r) ns.push(i + 1);
-        ns.forEach(n => { if (prev[n] < 0) { prev[n] = i; queue.push(n); } });
-    }
-    const path = [];
-    for (let i = cells.length - 1; i !== 0; i = prev[i]) path.push(i);
-    path.push(0);
-    let junctions = 0;
-    path.slice(1, -1).forEach(i => {
-        const open = Object.values(cells[i].w).filter(x => !x).length;
-        if (open >= 3) junctions++;
-    });
-    return { length: path.length, junctions, ratio: path.length / (cols + rows - 1) };
-}
-
-function generateMaze(seed, levelKey) {
-    const cfg = MAZE_LEVELS[levelKey];
-    let best = null, bestDev = Infinity;
-    for (let attempt = 0; attempt < 600; attempt++) {
-        const rnd = mulberry32((Math.imul(seed, 2654435761) + Math.imul(attempt, 40503)) >>> 0);
-        const cells = buildMaze(rnd, cfg.cols, cfg.rows, cfg.loops);
-        const info = analyzeMaze(cells, cfg.cols, cfg.rows);
-        const dev = Math.max(0, cfg.ratio[0] - info.ratio, info.ratio - cfg.ratio[1]) +
-                    Math.max(0, cfg.minJunctions - info.junctions) / 10;
-        if (dev === 0) return { cells, info };
-        if (dev < bestDev) { bestDev = dev; best = { cells, info }; }
-    }
-    return best;   // no debería ocurrir: se devuelve el más cercano a la franja
-}
-
 // Registro del recorrido del participante, medido en celdas del laberinto
 let mazeTrace = null;
 
@@ -608,231 +496,13 @@ function onFullscreenChange() {
     setTimeout(fitMazeCanvas, 150);
 }
 
-// ---------- CONFIGURACIÓN DE LA EVALUACIÓN ----------
-// Los parámetros se definen antes de comenzar (pantalla de configuración), vienen con valores por
-// defecto y lo que efectivamente se usó en cada prueba queda registrado en el informe.
-const COLOR_PALETTE = [
-    { id: 'rojo',     name: 'Rojo',     hex: '#dc2626' },
-    { id: 'naranja',  name: 'Naranja',  hex: '#ea580c' },
-    { id: 'amarillo', name: 'Amarillo', hex: '#facc15' },
-    { id: 'verde',    name: 'Verde',    hex: '#16a34a' },
-    { id: 'celeste',  name: 'Celeste',  hex: '#0ea5e9' },
-    { id: 'azul',     name: 'Azul',     hex: '#1d4ed8' },
-    { id: 'violeta',  name: 'Violeta',  hex: '#7c3aed' },
-    { id: 'marron',   name: 'Marrón',   hex: '#78350f' },
-    { id: 'negro',    name: 'Negro',    hex: '#0f172a' }
-];
-const CONST_PRESETS = {
-    generica: { circles: ['Principal', 'Vínculo Cercano', 'F. Periférica'], rects: ['Obstáculo', 'Refugio'] },
-    familiar: { circles: ['Yo', 'Madre', 'Padre', 'Hermano/a', 'Pareja', 'Hijo/a', 'Otro'], rects: ['Obstáculo', 'Refugio'] },
-    laboral:  { circles: ['Yo', 'Jefe/a', 'Compañero/a', 'Equipo', 'Cliente'], rects: ['Obstáculo', 'Refugio'] }
-};
-const PROFILE_KEY = 'psimatrix_perfiles_v1';
-
-function defaultConfig() {
-    return {
-        device: '',
-        timerVisible: false,
-        limitAction: 'avisar',
-        order: TEST_KEYS.slice(),
-        tests: {
-            house: {
-                enabled: true, limitMin: 0, color: true, eraser: true,
-                consigna: 'Dibuje una casa o espacio habitable utilizando las herramientas provistas.'
-            },
-            constellation: {
-                enabled: true, limitMin: 0, mode: 'fija', maxItems: 0,
-                circles: CONST_PRESETS.generica.circles.slice(), rects: CONST_PRESETS.generica.rects.slice(),
-                consigna: 'Seleccione elementos de la paleta y ubíquelos libremente en el plano.'
-            },
-            color: {
-                enabled: true, limitMin: 0, paletteMode: 'libre', colors: COLOR_PALETTE.map(c => c.id),
-                tools: { fluid: true, splash: true },
-                consigna: 'Exprese libremente un estado afectivo o vivencia mediante el color y el trazo fluido.'
-            },
-            maze: {
-                enabled: true, limitMin: 0, level: 'media', seed: randomMazeSeed(),
-                consigna: 'Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja).'
-            }
-        }
-    };
-}
-
+// ---------- APLICACIÓN DE LA CONFIGURACIÓN ----------
+// La configuración la define el evaluador en configuracion.html y llega por la capa de almacenamiento
+// (storage.js). Durante la evaluación no se puede modificar desde esta página.
 let config = null;                 // configuración vigente
-let cfgFromMenu = false;           // la pantalla de configuración se abrió desde el menú
-let evaluationStarted = false;     // ya se confirmó la configuración para este evaluado
 const limitFired = { house: false, constellation: false, color: false, maze: false };
 
 const activeKeys = () => config.order.filter(k => config.tests[k].enabled);
-
-// --- Formulario de configuración ---
-function buildConfigUI() {
-    const box = $('cfg-color-swatches');
-    COLOR_PALETTE.forEach(c => {
-        const cb = el('input', { type: 'checkbox', value: c.id });
-        const dot = el('span', { className: 'dot' });
-        dot.style.background = c.hex;
-        box.appendChild(el('label', { className: 'cfg-swatch' }, [cb, dot, c.name]));
-    });
-}
-
-function fillConfigForm(cfg) {
-    $('cfg-device').value = cfg.device;
-    $('cfg-timer-visible').checked = cfg.timerVisible;
-    $('cfg-limit-action').value = cfg.limitAction;
-    cfg.order.forEach(k => $('cfg-tests').appendChild($('cfg-card-' + k)));
-    TEST_KEYS.forEach(k => {
-        $('cfg-' + k + '-enabled').checked = cfg.tests[k].enabled;
-        $('cfg-' + k + '-consigna').value = cfg.tests[k].consigna;
-        $('cfg-' + k + '-limit').value = cfg.tests[k].limitMin;
-    });
-    const h = cfg.tests.house;
-    $('cfg-house-color').checked = h.color;
-    $('cfg-house-eraser').checked = h.eraser;
-    const c = cfg.tests.constellation;
-    $('cfg-const-mode').value = c.mode;
-    $('cfg-const-circles').value = c.circles.join('\n');
-    $('cfg-const-rects').value = c.rects.join('\n');
-    $('cfg-const-max').value = c.maxItems;
-    const cc = cfg.tests.color;
-    $('cfg-color-mode').value = cc.paletteMode;
-    $('cfg-color-swatches').querySelectorAll('input').forEach(i => { i.checked = cc.colors.includes(i.value); });
-    $('cfg-color-fluid').checked = cc.tools.fluid;
-    $('cfg-color-splash').checked = cc.tools.splash;
-    $('cfg-maze-level').value = cfg.tests.maze.level;
-    $('cfg-maze-seed').value = cfg.tests.maze.seed;
-    updateCfgVisibility();
-    updateMazePreview();
-}
-
-function updateCfgVisibility() {
-    TEST_KEYS.forEach(k => $('cfg-card-' + k).classList.toggle('off', !$('cfg-' + k + '-enabled').checked));
-    $('cfg-const-fixed').style.display = $('cfg-const-mode').value === 'fija' ? '' : 'none';
-    $('cfg-color-swatches-wrap').style.display = $('cfg-color-mode').value === 'fija' ? '' : 'none';
-}
-
-function moveCfgCard(k, dir) {
-    const card = $('cfg-card-' + k), box = card.parentElement;
-    if (dir < 0 && card.previousElementSibling) box.insertBefore(card, card.previousElementSibling);
-    if (dir > 0 && card.nextElementSibling) box.insertBefore(card.nextElementSibling, card);
-}
-
-function applyConstPreset() {
-    const sel = $('cfg-const-preset'), p = CONST_PRESETS[sel.value];
-    if (p) {
-        $('cfg-const-circles').value = p.circles.join('\n');
-        $('cfg-const-rects').value = p.rects.join('\n');
-    }
-    sel.value = '';
-}
-
-function cfgRandomMazeSeed() {
-    $('cfg-maze-seed').value = randomMazeSeed();
-    updateMazePreview();
-}
-
-function updateMazePreview() {
-    const level = $('cfg-maze-level').value, raw = $('cfg-maze-seed').value.trim(), box = $('cfg-maze-preview');
-    if (raw === '') { box.textContent = 'Campo vacío: se elegirá un laberinto al azar al confirmar.'; return; }
-    const seed = Number(raw);
-    if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
-        box.textContent = `Ingrese un número entero entre 1 y ${MAZE_MAX}.`;
-        return;
-    }
-    const cfg = MAZE_LEVELS[level], g = generateMaze(seed, level);
-    box.textContent = `Cuadrícula ${cfg.cols}×${cfg.rows} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
-}
-
-// Lee y valida el formulario; devuelve la configuración o null (mostrando el motivo)
-function readConfigForm() {
-    const fail = (msg, id) => { alert(msg); if (id && $(id)) $(id).focus(); return null; };
-    const cfg = {
-        device: $('cfg-device').value,
-        timerVisible: $('cfg-timer-visible').checked,
-        limitAction: $('cfg-limit-action').value,
-        order: [...$('cfg-tests').children].map(c => c.dataset.test),
-        tests: {}
-    };
-    if (!cfg.device) return fail('Seleccione el dispositivo y la forma de ingreso con que se realizarán las pruebas.', 'cfg-device');
-
-    TEST_KEYS.forEach(k => {
-        cfg.tests[k] = {
-            enabled: $('cfg-' + k + '-enabled').checked,
-            consigna: $('cfg-' + k + '-consigna').value.trim(),
-            limitMin: Number($('cfg-' + k + '-limit').value || 0)
-        };
-    });
-    if (!TEST_KEYS.some(k => cfg.tests[k].enabled)) return fail('Seleccione al menos una prueba para la batería.');
-
-    for (const k of TEST_KEYS) {
-        const lim = cfg.tests[k].limitMin;
-        if (cfg.tests[k].enabled && (!Number.isInteger(lim) || lim < 0 || lim > 240)) {
-            return fail(`Límite de tiempo de «${TESTS[k].short}»: ingrese un número entero de minutos entre 0 y 240 (0 = sin límite).`, 'cfg-' + k + '-limit');
-        }
-    }
-
-    Object.assign(cfg.tests.house, { color: $('cfg-house-color').checked, eraser: $('cfg-house-eraser').checked });
-
-    const lines = (id) => $(id).value.split('\n').map(s => s.trim().slice(0, 24)).filter(Boolean);
-    const maxItems = Number($('cfg-const-max').value || 0);
-    Object.assign(cfg.tests.constellation, {
-        mode: $('cfg-const-mode').value, circles: lines('cfg-const-circles'), rects: lines('cfg-const-rects'), maxItems
-    });
-    if (cfg.tests.constellation.enabled) {
-        if (!Number.isInteger(maxItems) || maxItems < 0 || maxItems > 50) return fail('Máximo de elementos de la Constelación: ingrese un entero entre 0 y 50 (0 = sin límite).', 'cfg-const-max');
-        if (cfg.tests.constellation.mode === 'fija' && !cfg.tests.constellation.circles.length && !cfg.tests.constellation.rects.length) {
-            return fail('La paleta fija de la Constelación necesita al menos un elemento.', 'cfg-const-circles');
-        }
-    }
-
-    Object.assign(cfg.tests.color, {
-        paletteMode: $('cfg-color-mode').value,
-        colors: [...$('cfg-color-swatches').querySelectorAll('input')].filter(i => i.checked).map(i => i.value),
-        tools: { fluid: $('cfg-color-fluid').checked, splash: $('cfg-color-splash').checked }
-    });
-    if (cfg.tests.color.enabled) {
-        if (!cfg.tests.color.tools.fluid && !cfg.tests.color.tools.splash) return fail('Dinámica Cromática: habilite al menos una herramienta.');
-        if (cfg.tests.color.paletteMode === 'fija' && !cfg.tests.color.colors.length) return fail('Dinámica Cromática: marque al menos un color disponible.');
-    }
-
-    const raw = $('cfg-maze-seed').value.trim();
-    let seed = randomMazeSeed();
-    if (raw !== '') {
-        seed = Number(raw);
-        if (cfg.tests.maze.enabled && (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX)) {
-            return fail(`Número de laberinto: ingrese un entero entre 1 y ${MAZE_MAX}, o deje el campo vacío para elegir uno al azar.`, 'cfg-maze-seed');
-        }
-        if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) seed = randomMazeSeed();
-    }
-    Object.assign(cfg.tests.maze, { level: $('cfg-maze-level').value, seed });
-    return cfg;
-}
-
-// Aplica una configuración ya validada a toda la aplicación. Devuelve false si el evaluador cancela.
-function applyConfig(cfg) {
-    const conDatos = TEST_KEYS.filter(k => !cfg.tests[k].enabled && testData[k]).map(k => TESTS[k].short);
-    if (conDatos.length && !confirm(`Ya hay datos guardados de: ${conDatos.join(', ')}.\nSi la quita de la batería, quedará fuera del menú y del informe (los datos no se borran). ¿Continuar?`)) return false;
-
-    const m = cfg.tests.maze;
-    if (cfg.tests.maze.enabled && (m.level !== mazeLevel || m.seed !== mazeSeed)) {
-        if (mazeHasPath && !confirm('Cambió el laberinto: se generará uno nuevo y se perderá el trazo actual. ¿Continuar?')) return false;
-        applyMaze(m.seed, m.level);
-        if (testData.maze) dirty.maze = true;
-    } else if (!cfg.tests.maze.enabled) {
-        // sin cambios en el laberinto vigente
-        m.level = mazeLevel; m.seed = mazeSeed;
-    }
-
-    TEST_KEYS.forEach(k => {
-        if (config && config.tests[k].limitMin !== cfg.tests[k].limitMin) {
-            limitFired[k] = false;
-            $('limit-note-' + k).textContent = '';
-        }
-    });
-    config = cfg;
-    applyConfigToUI();
-    return true;
-}
 
 function setConsigna(k) {
     const p = $('consigna-' + k), t = config.tests[k].consigna;
@@ -914,92 +584,6 @@ function applyConfigToUI() {
     buildPaintSwatches();
 
     if (!config.timerVisible) TEST_KEYS.forEach(k => { $('timer-' + k).style.display = 'none'; });
-}
-
-// --- Flujo de pantallas ---
-function showConfig(fromMenu) {
-    cfgFromMenu = fromMenu;
-    fillConfigForm(config);
-    refreshProfileSelect();
-    $('cfg-confirm-btn').textContent = fromMenu ? 'Aplicar y volver a la batería' : 'Comenzar la batería';
-    switchScreen('screen-config');
-}
-
-function cfgBack() {
-    switchScreen(cfgFromMenu ? 'screen-menu' : 'screen-patient');
-}
-
-function confirmConfig() {
-    const cfg = readConfigForm();
-    if (!cfg || !applyConfig(cfg)) return;
-    evaluationStarted = true;
-    $('lbl-patient-name').textContent = patient.name;
-    refreshMenu();
-    switchScreen('screen-menu');
-}
-
-// --- Perfiles (solo parámetros; se guardan en este navegador) ---
-function loadProfiles() {
-    try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch (e) { return {}; }
-}
-
-function storeProfiles(p) {
-    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); return true; }
-    catch (e) { alert('No se pudo guardar el perfil en este navegador.'); return false; }
-}
-
-function refreshProfileSelect(selected) {
-    const sel = $('cfg-profile');
-    sel.innerHTML = '';
-    sel.appendChild(el('option', { value: '', textContent: 'Valores por defecto' }));
-    Object.keys(loadProfiles()).sort().forEach(n => sel.appendChild(el('option', { value: n, textContent: n })));
-    sel.value = selected || '';
-}
-
-function mergeDeep(def, src) {
-    if (!src || typeof src !== 'object') return def;
-    Object.keys(def).forEach(k => {
-        if (!(k in src)) return;
-        if (def[k] && typeof def[k] === 'object' && !Array.isArray(def[k])) def[k] = mergeDeep(def[k], src[k]);
-        else if (typeof src[k] === typeof def[k] && Array.isArray(src[k]) === Array.isArray(def[k])) def[k] = src[k];
-    });
-    return def;
-}
-
-function saveProfile() {
-    const cfg = readConfigForm();
-    if (!cfg) return;
-    const name = (prompt('Nombre del perfil (por ejemplo «Adultos laborales»):') || '').trim();
-    if (!name) return;
-    const all = loadProfiles();
-    if (all[name] && !confirm('Ya existe un perfil con ese nombre. ¿Reemplazarlo?')) return;
-    const copy = JSON.parse(JSON.stringify(cfg));
-    delete copy.device;
-    all[name] = copy;
-    if (storeProfiles(all)) refreshProfileSelect(name);
-}
-
-function loadProfile() {
-    const name = $('cfg-profile').value;
-    const device = $('cfg-device').value;
-    let cfg = defaultConfig();
-    if (name) {
-        const saved = loadProfiles()[name];
-        if (!saved) { alert('No se encontró el perfil.'); return; }
-        cfg = mergeDeep(cfg, saved);
-        if (!Array.isArray(cfg.order) || cfg.order.length !== TEST_KEYS.length || !TEST_KEYS.every(k => cfg.order.includes(k))) cfg.order = TEST_KEYS.slice();
-    }
-    cfg.device = device;
-    fillConfigForm(cfg);
-}
-
-function deleteProfile() {
-    const name = $('cfg-profile').value;
-    if (!name) { alert('Elija primero un perfil para eliminarlo.'); return; }
-    if (!confirm(`¿Eliminar el perfil «${name}»?`)) return;
-    const all = loadProfiles();
-    delete all[name];
-    if (storeProfiles(all)) refreshProfileSelect();
 }
 
 // --- Cronómetro y límite de tiempo ---
@@ -1093,13 +677,6 @@ function saveTestResult(type) {
 }
 
 // ---------- INFORME ----------
-function el(tag, props, children) {
-    const e = document.createElement(tag);
-    Object.assign(e, props || {});
-    (children || []).forEach(c => e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
-    return e;
-}
-
 function obsBlock(key) {
     const wrap = el('div');
     const ta = el('textarea', { className: 'obs', value: obs[key], placeholder: 'Escriba aquí observaciones clínicas (conducta durante la prueba, indicadores relevantes, etc.)' });
@@ -1255,7 +832,6 @@ function resetAll() {
     });
     obs.general = '';
     activeTest = null;
-    evaluationStarted = false;
     clearCanvas($('houseCanvas'));
     clearCanvas($('colorCanvas'));
     wipeConstellation();
@@ -1265,15 +841,6 @@ function resetAll() {
     refreshMenu();
     switchScreen('screen-patient');
 }
-
-// ---------- Inicialización ----------
-config = defaultConfig();
-buildConfigUI();
-initHouseCanvas();
-initColorCanvas();
-initMazeCanvas();
-applyConfigToUI();
-setInterval(tickTimer, 500);
 
 $('constellation-workspace').addEventListener('pointerdown', (e) => {
     if (e.target === e.currentTarget) selectItem(null);
@@ -1304,3 +871,17 @@ window.addEventListener('beforeunload', (e) => {
         e.returnValue = '';
     }
 });
+
+// ---------- Inicialización ----------
+async function init() {
+    let saved = null;
+    try { saved = await store.getActiveConfig(); } catch (e) { saved = null; }
+    if (!saved) { switchScreen('screen-noconfig'); return; }
+    config = normalizeConfig(saved);
+    initHouseCanvas();
+    initColorCanvas();
+    initMazeCanvas();
+    applyConfigToUI();
+}
+init();
+setInterval(tickTimer, 500);

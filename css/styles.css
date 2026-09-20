@@ -418,3 +418,22 @@ canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-act
     border: 2px solid rgba(255, 255, 255, 0.5);
 }
 .toolbar button.swatch.active { outline: 3px solid var(--brand-primary); outline-offset: 2px; }
+
+/* ---------- Enlaces con aspecto de botón y avisos de la página de configuración ---------- */
+.btn-link {
+    display: inline-block;
+    background-color: var(--brand-primary);
+    color: #0f172a;
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+}
+.btn-link:hover { background-color: var(--brand-primary-hover); }
+.btn-link.secondary { background-color: var(--surface); color: var(--text-main); }
+.btn-link.secondary:hover { background-color: #475569; }
+
+.cfg-status { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 600; }
+.cfg-status.ok { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid #14b8a6; }
+.cfg-status.error { background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid #f43f5e; }

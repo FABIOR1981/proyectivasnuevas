@@ -17,7 +17,7 @@
     <!-- Pantalla 1: Datos del evaluado -->
     <div id="screen-patient" class="screen active">
         <h2>Registro del Evaluado</h2>
-        <p class="subtitle" style="margin-bottom: 25px;">Ingrese los datos del evaluado. En el paso siguiente se define la configuración de la evaluación y el dispositivo.</p>
+        <p class="subtitle" style="margin-bottom: 25px;">Ingrese los datos del evaluado para iniciar el protocolo de pruebas.</p>
         <div class="form-group">
             <label for="p-name">Nombre y Apellido:</label>
             <input type="text" id="p-name" placeholder="Ej. Roberto Sánchez" autocomplete="off">
@@ -36,187 +36,11 @@
     </div>
 
 
-    <!-- Pantalla 1b: Configuración de la evaluación -->
-    <div id="screen-config" class="screen">
-        <h2>Configuración de la Evaluación</h2>
-        <p class="subtitle" style="margin-bottom: 20px;">Ajuste las condiciones de administración antes de comenzar. Todo viene con valores por defecto y lo que se elija queda registrado en el informe. Si va a comparar entre evaluados, use siempre la misma configuración.</p>
-
-        <div class="cfg-block">
-            <h3>Perfiles de configuración</h3>
-            <div class="cfg-row">
-                <select id="cfg-profile" aria-label="Perfil"></select>
-                <button class="secondary" type="button" onclick="loadProfile()">Cargar</button>
-                <button class="secondary" type="button" onclick="saveProfile()">Guardar como perfil…</button>
-                <button class="secondary" type="button" onclick="deleteProfile()">Eliminar</button>
-            </div>
-            <p class="hint">Los perfiles guardan solo parámetros (nunca datos del evaluado) y quedan en este navegador. No incluyen el dispositivo.</p>
-        </div>
-
-        <div class="cfg-block">
-            <h3>Condiciones generales</h3>
-            <div class="cfg-field">
-                <label for="cfg-device">Dispositivo y forma de ingreso:</label>
-                <select id="cfg-device">
-                    <option value="">Seleccione...</option>
-                    <option>Computadora con mouse</option>
-                    <option>Computadora con pantalla táctil (dedo)</option>
-                    <option>Tablet con dedo</option>
-                    <option>Tablet con lápiz</option>
-                    <option>Celular con dedo</option>
-                    <option>Otro</option>
-                </select>
-            </div>
-            <div class="cfg-field">
-                <label class="cfg-check"><input type="checkbox" id="cfg-timer-visible"> Mostrar el cronómetro al evaluado durante la prueba</label>
-            </div>
-            <div class="cfg-field">
-                <label for="cfg-limit-action">Al cumplirse el límite de tiempo de una prueba:</label>
-                <select id="cfg-limit-action">
-                    <option value="avisar">Solo avisar (el evaluado puede seguir)</option>
-                    <option value="cerrar">Guardar y cerrar la prueba</option>
-                </select>
-            </div>
-        </div>
-
-        <h3 class="cfg-section-title">Pruebas de la batería</h3>
-        <p class="hint" style="margin: 0 0 12px 0;">Marque las pruebas que va a administrar y ordénelas con las flechas.</p>
-        <div id="cfg-tests">
-
-            <div class="cfg-card" id="cfg-card-house" data-test="house">
-                <div class="cfg-card-head">
-                    <label class="cfg-check"><input type="checkbox" id="cfg-house-enabled" onchange="updateCfgVisibility()"> <strong>Test de la Casa</strong></label>
-                    <span class="cfg-move">
-                        <button type="button" aria-label="Subir" onclick="moveCfgCard('house', -1)">↑</button>
-                        <button type="button" aria-label="Bajar" onclick="moveCfgCard('house', 1)">↓</button>
-                    </span>
-                </div>
-                <div class="cfg-body">
-                    <div class="cfg-field">
-                        <label for="cfg-house-consigna">Consigna:</label>
-                        <textarea id="cfg-house-consigna" rows="2"></textarea>
-                    </div>
-                    <div class="cfg-grid">
-                        <label class="cfg-check"><input type="checkbox" id="cfg-house-color"> Permitir color (si no, solo grafito)</label>
-                        <label class="cfg-check"><input type="checkbox" id="cfg-house-eraser"> Permitir goma</label>
-                        <label class="cfg-inline">Límite de tiempo (min, 0 = sin límite): <input type="number" class="cfg-num" id="cfg-house-limit" min="0" max="240"></label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cfg-card" id="cfg-card-constellation" data-test="constellation">
-                <div class="cfg-card-head">
-                    <label class="cfg-check"><input type="checkbox" id="cfg-constellation-enabled" onchange="updateCfgVisibility()"> <strong>Constelación Familiar / Vincular</strong></label>
-                    <span class="cfg-move">
-                        <button type="button" aria-label="Subir" onclick="moveCfgCard('constellation', -1)">↑</button>
-                        <button type="button" aria-label="Bajar" onclick="moveCfgCard('constellation', 1)">↓</button>
-                    </span>
-                </div>
-                <div class="cfg-body">
-                    <div class="cfg-field">
-                        <label for="cfg-constellation-consigna">Consigna:</label>
-                        <textarea id="cfg-constellation-consigna" rows="2"></textarea>
-                    </div>
-                    <div class="cfg-field">
-                        <label for="cfg-const-mode">Elementos disponibles:</label>
-                        <select id="cfg-const-mode" onchange="updateCfgVisibility()">
-                            <option value="fija">Paleta fija (definida por el evaluador)</option>
-                            <option value="libre">Rótulos que escribe el evaluado</option>
-                        </select>
-                    </div>
-                    <div id="cfg-const-fixed">
-                        <div class="cfg-field">
-                            <label for="cfg-const-preset">Cargar un modelo de paleta:</label>
-                            <select id="cfg-const-preset" onchange="applyConstPreset()">
-                                <option value="">— Elegir modelo —</option>
-                                <option value="generica">Genérica</option>
-                                <option value="familiar">Familiar</option>
-                                <option value="laboral">Laboral</option>
-                            </select>
-                        </div>
-                        <div class="cfg-field">
-                            <label for="cfg-const-circles">Círculos (personas / vínculos), un rótulo por línea:</label>
-                            <textarea id="cfg-const-circles" rows="4"></textarea>
-                        </div>
-                        <div class="cfg-field">
-                            <label for="cfg-const-rects">Rectángulos (obstáculos / refugios), un rótulo por línea:</label>
-                            <textarea id="cfg-const-rects" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="cfg-grid">
-                        <label class="cfg-inline">Máximo de elementos (0 = sin límite): <input type="number" class="cfg-num" id="cfg-const-max" min="0" max="50"></label>
-                        <label class="cfg-inline">Límite de tiempo (min, 0 = sin límite): <input type="number" class="cfg-num" id="cfg-constellation-limit" min="0" max="240"></label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cfg-card" id="cfg-card-color" data-test="color">
-                <div class="cfg-card-head">
-                    <label class="cfg-check"><input type="checkbox" id="cfg-color-enabled" onchange="updateCfgVisibility()"> <strong>Dinámica Cromática</strong></label>
-                    <span class="cfg-move">
-                        <button type="button" aria-label="Subir" onclick="moveCfgCard('color', -1)">↑</button>
-                        <button type="button" aria-label="Bajar" onclick="moveCfgCard('color', 1)">↓</button>
-                    </span>
-                </div>
-                <div class="cfg-body">
-                    <div class="cfg-field">
-                        <label for="cfg-color-consigna">Consigna:</label>
-                        <textarea id="cfg-color-consigna" rows="2"></textarea>
-                    </div>
-                    <div class="cfg-field">
-                        <label for="cfg-color-mode">Paleta de colores:</label>
-                        <select id="cfg-color-mode" onchange="updateCfgVisibility()">
-                            <option value="libre">Libre (cualquier color)</option>
-                            <option value="fija">Restringida a los colores marcados</option>
-                        </select>
-                    </div>
-                    <div id="cfg-color-swatches-wrap" class="cfg-field">
-                        <label>Colores disponibles:</label>
-                        <div id="cfg-color-swatches" class="cfg-swatches"></div>
-                    </div>
-                    <div class="cfg-grid">
-                        <label class="cfg-check"><input type="checkbox" id="cfg-color-fluid"> Trazo continuo</label>
-                        <label class="cfg-check"><input type="checkbox" id="cfg-color-splash"> Mancha / textura</label>
-                        <label class="cfg-inline">Límite de tiempo (min, 0 = sin límite): <input type="number" class="cfg-num" id="cfg-color-limit" min="0" max="240"></label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cfg-card" id="cfg-card-maze" data-test="maze">
-                <div class="cfg-card-head">
-                    <label class="cfg-check"><input type="checkbox" id="cfg-maze-enabled" onchange="updateCfgVisibility()"> <strong>Laberinto Estructural</strong></label>
-                    <span class="cfg-move">
-                        <button type="button" aria-label="Subir" onclick="moveCfgCard('maze', -1)">↑</button>
-                        <button type="button" aria-label="Bajar" onclick="moveCfgCard('maze', 1)">↓</button>
-                    </span>
-                </div>
-                <div class="cfg-body">
-                    <div class="cfg-field">
-                        <label for="cfg-maze-consigna">Consigna:</label>
-                        <textarea id="cfg-maze-consigna" rows="2"></textarea>
-                    </div>
-                    <div class="cfg-grid">
-                        <label class="cfg-inline">Dificultad:
-                            <select id="cfg-maze-level" onchange="updateMazePreview()">
-                                <option value="facil">Fácil</option>
-                                <option value="media">Media</option>
-                                <option value="dificil">Difícil</option>
-                            </select>
-                        </label>
-                        <label class="cfg-inline">Nº de laberinto (1 a 9999): <input type="number" class="cfg-num" id="cfg-maze-seed" min="1" max="9999" placeholder="al azar" oninput="updateMazePreview()"></label>
-                        <button class="secondary" type="button" onclick="cfgRandomMazeSeed()">🎲 Al azar</button>
-                        <label class="cfg-inline">Límite de tiempo (min, 0 = sin límite): <input type="number" class="cfg-num" id="cfg-maze-limit" min="0" max="240"></label>
-                    </div>
-                    <p class="hint" id="cfg-maze-preview" style="margin-top: 10px;"></p>
-                    <p class="hint">Cada nivel tiene 9999 laberintos numerados; el mismo nivel y número dan siempre el mismo laberinto (útil para comparar entre evaluados). Se descartan automáticamente los demasiado directos.</p>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="actions-bar">
-            <button class="secondary" onclick="cfgBack()">Volver</button>
-            <button id="cfg-confirm-btn" onclick="confirmConfig()">Comenzar la batería</button>
-        </div>
+    <!-- Sin configuración activa -->
+    <div id="screen-noconfig" class="screen">
+        <h2>No hay una configuración activa</h2>
+        <p class="subtitle" style="margin-bottom: 25px;">El evaluador debe definir la configuración de la evaluación antes de comenzar.</p>
+        <a class="btn-link" href="configuracion.html">Ir a la configuración</a>
     </div>
 
     <!-- Pantalla 2: Menú de pruebas -->
@@ -247,10 +71,7 @@
         </div>
 
         <div class="actions-bar">
-            <div class="actions-group">
-                <button class="secondary" onclick="switchScreen('screen-patient')">Modificar Datos</button>
-                <button class="secondary" onclick="showConfig(true)">Modificar Configuración</button>
-            </div>
+            <button class="secondary" onclick="switchScreen('screen-patient')">Modificar Datos</button>
             <button onclick="finishAll()">Finalizar y Generar Informe</button>
         </div>
     </div>
@@ -377,6 +198,8 @@
 
 <!-- Librería para generar .docx real (con imágenes incrustadas) -->
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script src="js/common.js"></script>
+<script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 
 </body>
