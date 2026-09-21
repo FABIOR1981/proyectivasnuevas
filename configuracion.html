@@ -181,6 +181,12 @@
                         <textarea id="cfg-maze-consigna" rows="2"></textarea>
                     </div>
                     <div class="cfg-grid">
+                        <label class="cfg-inline">Tipo:
+                            <select id="cfg-maze-type" onchange="updateMazePreview()">
+                                <option value="rectangular">Rectangular</option>
+                                <option value="pasillos">Pasillos anchos</option>
+                            </select>
+                        </label>
                         <label class="cfg-inline">Dificultad:
                             <select id="cfg-maze-level" onchange="updateMazePreview()">
                                 <option value="facil">Fácil</option>
@@ -193,7 +199,7 @@
                         <label class="cfg-inline">Límite de tiempo (min, 0 = sin límite): <input type="number" class="cfg-num" id="cfg-maze-limit" min="0" max="240"></label>
                     </div>
                     <p class="hint" id="cfg-maze-preview" style="margin-top: 10px;"></p>
-                    <p class="hint">Cada nivel tiene 9999 laberintos numerados; el mismo nivel y número dan siempre el mismo laberinto (útil para comparar entre evaluados). Se descartan automáticamente los demasiado directos.</p>
+                    <p class="hint">Cada tipo y nivel tiene 9999 laberintos numerados; el mismo tipo, nivel y número dan siempre el mismo laberinto (útil para comparar entre evaluados). Se descartan automáticamente los demasiado directos. «Pasillos anchos» usa una cuadrícula gruesa con pasillos más fáciles de recorrer con el dedo. Las medidas del recorrido no son comparables entre tipos distintos.</p>
                 </div>
             </div>
 

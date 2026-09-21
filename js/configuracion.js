@@ -35,6 +35,7 @@ function fillConfigForm(cfg) {
     $('cfg-color-swatches').querySelectorAll('input').forEach(i => { i.checked = cc.colors.includes(i.value); });
     $('cfg-color-fluid').checked = cc.tools.fluid;
     $('cfg-color-splash').checked = cc.tools.splash;
+    $('cfg-maze-type').value = cfg.tests.maze.type;
     $('cfg-maze-level').value = cfg.tests.maze.level;
     $('cfg-maze-seed').value = cfg.tests.maze.seed;
     updateCfgVisibility();
@@ -68,14 +69,14 @@ function cfgRandomMazeSeed() {
 }
 
 function updateMazePreview() {
-    const level = $('cfg-maze-level').value, raw = $('cfg-maze-seed').value.trim(), box = $('cfg-maze-preview');
+    const type = $('cfg-maze-type').value, level = $('cfg-maze-level').value, raw = $('cfg-maze-seed').value.trim(), box = $('cfg-maze-preview');
     if (raw === '') { box.textContent = 'Campo vacío: se elegirá un laberinto al azar al confirmar.'; return; }
     const seed = Number(raw);
     if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) {
         box.textContent = `Ingrese un número entero entre 1 y ${MAZE_MAX}.`;
         return;
     }
-    const cfg = MAZE_LEVELS[level], g = generateMaze(seed, level);
+    const cfg = mazeCfg(type, level), g = generateMaze(seed, level, type);
     box.textContent = `Cuadrícula ${cfg.cols}×${cfg.rows} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
 }
 
@@ -140,7 +141,7 @@ function readConfigForm() {
         }
         if (!Number.isInteger(seed) || seed < 1 || seed > MAZE_MAX) seed = randomMazeSeed();
     }
-    Object.assign(cfg.tests.maze, { level: $('cfg-maze-level').value, seed });
+    Object.assign(cfg.tests.maze, { type: $('cfg-maze-type').value, level: $('cfg-maze-level').value, seed });
     return cfg;
 }
 

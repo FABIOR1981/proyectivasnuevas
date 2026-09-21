@@ -23,13 +23,30 @@ const TESTS = {
 // Cada nivel tiene su propia cuadrícula y una franja de dificultad aceptable, medida sobre el
 // recorrido óptimo (celdas de la entrada a la salida vs. el mínimo posible) y las bifurcaciones
 // que hay en ese recorrido. Los laberintos demasiado directos se descartan de forma
-// determinista: el mismo nivel + el mismo número dan siempre el mismo laberinto.
-const MAZE_MAX = 9999;   // por nivel: laberintos numerados del 1 al MAZE_MAX
-const MAZE_LEVELS = {
-    facil:   { label: 'Fácil',   cols: 16, rows: 9,  loops: 3, ratio: [2.0, 3.0], minJunctions: 6 },
-    media:   { label: 'Media',   cols: 20, rows: 11, loops: 3, ratio: [2.8, 3.8], minJunctions: 9 },
-    dificil: { label: 'Difícil', cols: 25, rows: 14, loops: 2, ratio: [3.6, 5.0], minJunctions: 13 }
+// determinista: el mismo tipo + nivel + número dan siempre el mismo laberinto.
+const MAZE_MAX = 9999;   // por tipo y nivel: laberintos numerados del 1 al MAZE_MAX
+// Tipos de laberinto. Comparten el mismo modelo (celdas y pasajes); cambian la cuadrícula y el dibujo.
+//   rectangular: paredes finas sobre una cuadrícula fina.
+//   pasillos:    cuadrícula gruesa dibujada como pasillos anchos (más fácil de trazar con el dedo).
+const MAZE_TYPES = {
+    rectangular: {
+        label: 'Rectangular',
+        levels: {
+            facil:   { label: 'Fácil',   cols: 16, rows: 9,  loops: 3, ratio: [2.0, 3.0], minJunctions: 6 },
+            media:   { label: 'Media',   cols: 20, rows: 11, loops: 3, ratio: [2.8, 3.8], minJunctions: 9 },
+            dificil: { label: 'Difícil', cols: 25, rows: 14, loops: 2, ratio: [3.6, 5.0], minJunctions: 13 }
+        }
+    },
+    pasillos: {
+        label: 'Pasillos anchos',
+        levels: {
+            facil:   { label: 'Fácil',   cols: 6,  rows: 4, loops: 0, ratio: [1.4, 2.4], minJunctions: 1 },
+            media:   { label: 'Media',   cols: 8,  rows: 5, loops: 0, ratio: [1.7, 2.7], minJunctions: 2 },
+            dificil: { label: 'Difícil', cols: 10, rows: 6, loops: 0, ratio: [2.0, 3.0], minJunctions: 3 }
+        }
+    }
 };
+const mazeCfg = (type, level) => MAZE_TYPES[type].levels[level];
 const randomMazeSeed = () => 1 + Math.floor(Math.random() * MAZE_MAX);
 
 function mulberry32(a) {
@@ -103,8 +120,8 @@ function analyzeMaze(cells, cols, rows) {
     return { length: path.length, junctions, ratio: path.length / (cols + rows - 1) };
 }
 
-function generateMaze(seed, levelKey) {
-    const cfg = MAZE_LEVELS[levelKey];
+function generateMaze(seed, levelKey, typeKey = 'rectangular') {
+    const cfg = mazeCfg(typeKey, levelKey);
     let best = null, bestDev = Infinity;
     for (let attempt = 0; attempt < 600; attempt++) {
         const rnd = mulberry32((Math.imul(seed, 2654435761) + Math.imul(attempt, 40503)) >>> 0);
@@ -159,7 +176,7 @@ function defaultConfig() {
                 consigna: 'Exprese libremente un estado afectivo o vivencia mediante el color y el trazo fluido.'
             },
             maze: {
-                enabled: true, limitMin: 0, level: 'media', seed: randomMazeSeed(),
+                enabled: true, limitMin: 0, type: 'rectangular', level: 'media', seed: randomMazeSeed(),
                 consigna: 'Trace un recorrido continuo desde la Entrada (Verde) hasta la Salida (Roja).'
             }
         }
@@ -203,7 +220,8 @@ function normalizeConfig(src) {
     if (!cc.tools.fluid && !cc.tools.splash) cc.tools.fluid = true;
 
     const m = cfg.tests.maze;
-    if (!MAZE_LEVELS[m.level]) m.level = 'media';
+    if (!MAZE_TYPES[m.type]) m.type = 'rectangular';
+    if (!mazeCfg(m.type, m.level)) m.level = 'media';
     if (!Number.isInteger(m.seed) || m.seed < 1 || m.seed > MAZE_MAX) m.seed = randomMazeSeed();
     return cfg;
 }

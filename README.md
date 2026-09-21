@@ -55,7 +55,7 @@ Los parámetros se definen en `configuracion.html`, aparte de las pruebas y ante
 | Test de la Casa | Permitir color o solo grafito; permitir goma |
 | Constelación Familiar | Paleta fija (con modelos Genérica, Familiar y Laboral, editables) o rótulos que escribe el evaluado; máximo de elementos |
 | Dinámica Cromática | Paleta libre o restringida a los colores marcados; herramientas disponibles (trazo continuo, mancha) |
-| Laberinto | Dificultad y número de laberinto (ver abajo) |
+| Laberinto | Tipo, dificultad y número de laberinto (ver abajo) |
 
 **Perfiles:** la configuración se puede guardar con un nombre (por ejemplo "Adultos laborales") y volver a cargar. Los perfiles guardan solo parámetros, nunca datos del evaluado ni el dispositivo. Dónde se guardan lo decide la capa de almacenamiento (ver más abajo); por defecto, en el navegador de ese equipo.
 
@@ -63,11 +63,26 @@ Los parámetros se definen en `configuracion.html`, aparte de las pruebas y ante
 
 ## Laberinto
 
-- **Niveles:** Fácil (16×9), Media (20×11) y Difícil (25×14). Se eligen en la configuración, donde además se ve una vista previa del recorrido óptimo.
-- **Numeración:** cada nivel tiene 9999 laberintos numerados. El mismo nivel y número dan siempre el mismo laberinto, lo que permite administrar el mismo laberinto a distintos evaluados. Con el campo vacío o con "🎲 Al azar" se elige uno cualquiera.
-- **Filtro de calidad:** se descartan automáticamente los laberintos demasiado directos. Cada nivel exige que el recorrido óptimo esté dentro de una franja de largo y tenga un mínimo de bifurcaciones.
+- **Tipos** (se eligen en la configuración):
+  - **Rectangular:** paredes finas sobre una cuadrícula fina.
+  - **Pasillos anchos:** cuadrícula gruesa dibujada como pasillos anchos (fondo oscuro, pasillos blancos), más fácil de recorrer con el dedo.
+- **Niveles:** cada tipo tiene tres niveles que cambian el tamaño de la cuadrícula.
+
+  | Nivel | Rectangular | Pasillos anchos |
+  |---|---|---|
+  | Fácil | 16×9 | 6×4 |
+  | Media | 20×11 | 8×5 |
+  | Difícil | 25×14 | 10×6 |
+
+  En la configuración se ve una vista previa del recorrido óptimo.
+- **Numeración:** cada tipo y nivel tiene 9999 laberintos numerados. El mismo tipo, nivel y número dan siempre el mismo laberinto, lo que permite administrar el mismo laberinto a distintos evaluados. Con el campo vacío o con "🎲 Al azar" se elige uno cualquiera.
+- **Filtro de calidad:** se descartan automáticamente los laberintos demasiado directos. Cada tipo y nivel exige que el recorrido óptimo esté dentro de una franja de largo y tenga un mínimo de bifurcaciones.
 - **Pantalla completa:** botón "⛶ Pantalla completa" para usar toda la pantalla (útil con la tablet en horizontal). Se sale con el botón o con Esc.
-- **Medidas del participante** (aparecen en el informe): celdas recorridas frente al óptimo, celdas distintas, cruces de pared y si llegó a la salida. Son medidas **descriptivas**: se calculan muestreando el trazo, por lo que en una esquina puede haber un error de una celda.
+- **Medidas del participante** (aparecen en el informe): celdas recorridas frente al óptimo, celdas distintas, si llegó a la salida y:
+  - en **Rectangular**, los *cruces de pared* (veces que el trazo atraviesa una pared);
+  - en **Pasillos anchos**, las *salidas del pasillo* (veces que el trazo pasa de dentro a fuera del pasillo; empezar a trazar fuera del pasillo no cuenta).
+
+  Son medidas **descriptivas**: se calculan muestreando el trazo, por lo que en una esquina puede haber un error de una celda. **No son comparables entre tipos distintos**: para comparar entre evaluados hay que usar el mismo tipo, nivel y número.
 
 ## Informe
 
