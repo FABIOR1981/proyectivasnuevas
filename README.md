@@ -66,13 +66,16 @@ Los parámetros se definen en `configuracion.html`, aparte de las pruebas y ante
 - **Tipos** (se eligen en la configuración):
   - **Rectangular:** paredes finas sobre una cuadrícula fina.
   - **Pasillos anchos:** cuadrícula gruesa dibujada como pasillos anchos (fondo oscuro, pasillos blancos), más fácil de recorrer con el dedo.
+  - **Senderos:** el mismo camino de "Pasillos anchos" dibujado como una red de curvas entre puntos, sin cuadrícula visible ni fondo oscuro.
 - **Niveles:** cada tipo tiene tres niveles que cambian el tamaño de la cuadrícula.
 
-  | Nivel | Rectangular | Pasillos anchos |
-  |---|---|---|
-  | Fácil | 16×9 | 6×4 |
-  | Media | 20×11 | 8×5 |
-  | Difícil | 25×14 | 10×6 |
+  | Nivel | Rectangular | Pasillos anchos | Senderos |
+  |---|---|---|---|
+  | Fácil | 16×9 | 9×5 | 9×5 |
+  | Media | 20×11 | 12×7 | 12×7 |
+  | Difícil | 25×14 | 15×9 | 15×9 |
+
+  El tamaño de «Pasillos anchos» y «Senderos» está calibrado para que el recorrido óptimo, en proporción al ancho de cada camino dibujado, sea comparable al del rectangular en cada nivel. Ambos comparten la misma cuadrícula de nodos; solo cambia cómo se dibuja.
 
   En la configuración se ve una vista previa del recorrido óptimo.
 - **Numeración:** cada tipo y nivel tiene 9999 laberintos numerados. El mismo tipo, nivel y número dan siempre el mismo laberinto, lo que permite administrar el mismo laberinto a distintos evaluados. Con el campo vacío o con "🎲 Al azar" se elige uno cualquiera.
@@ -80,7 +83,7 @@ Los parámetros se definen en `configuracion.html`, aparte de las pruebas y ante
 - **Pantalla completa:** botón "⛶ Pantalla completa" para usar toda la pantalla (útil con la tablet en horizontal). Se sale con el botón o con Esc.
 - **Medidas del participante** (aparecen en el informe): celdas recorridas frente al óptimo, celdas distintas, si llegó a la salida y:
   - en **Rectangular**, los *cruces de pared* (veces que el trazo atraviesa una pared);
-  - en **Pasillos anchos**, las *salidas del pasillo* (veces que el trazo pasa de dentro a fuera del pasillo; empezar a trazar fuera del pasillo no cuenta).
+  - en **Pasillos anchos** y **Senderos**, las *salidas del camino* (veces que el trazo pasa de dentro a fuera del camino dibujado; empezar a trazar fuera del camino no cuenta).
 
   Son medidas **descriptivas**: se calculan muestreando el trazo, por lo que en una esquina puede haber un error de una celda. **No son comparables entre tipos distintos**: para comparar entre evaluados hay que usar el mismo tipo, nivel y número.
 

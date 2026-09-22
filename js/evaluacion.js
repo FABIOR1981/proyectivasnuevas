@@ -1,5 +1,4 @@
 // ---------- Constantes y estado ----------
-const CW = 1080, CH = 630;           // resolución interna de todos los lienzos
 let patient = { name: '', id: '', age: '' };
 let testData = { house: null, constellation: null, color: null, maze: null };
 let elapsedMs = { house: 0, constellation: 0, color: 0, maze: 0 };
@@ -322,7 +321,8 @@ function initColorCanvas() {
 // ---------- LABERINTO (dibujo, recorrido y pantalla completa) ----------
 let COLS = 20, ROWS = 11;
 let mazeCells = null, mazeSeed = 1, mazeLevel = 'media', mazeType = 'rectangular', mazeInfo = null, mazeHasPath = false;
-let mazeSegs = [], mazeTube = 0;   // solo «pasillos anchos»: tramos entre centros de celda y ancho del pasillo
+let mazeSegs = [], mazeTube = 0;   // pasillos y senderos: polilíneas del trazo (cada una, una lista de puntos) y ancho
+let mazeTrailPos = null;           // solo «senderos»: posición de cada nodo en el lienzo
 // Registro del recorrido del participante, medido en celdas del laberinto
 let mazeTrace = null;
 
@@ -350,12 +350,13 @@ function traceMazeSegment(a, b, newStroke) {
     const t = mazeTrace, cw = CW / COLS, ch = CH / ROWS;
     if (newStroke) { t.prev = null; t.inside = null; }
     const dist = Math.hypot(b.x - a.x, b.y - a.y);
-    const stepLen = mazeType === 'pasillos' ? Math.min(cw, ch) / 6 : Math.min(cw, ch) / 3;
+    const usesTube = TUBE_TYPES.has(mazeType);
+    const stepLen = usesTube ? Math.min(cw, ch) / 6 : Math.min(cw, ch) / 3;
     const steps = Math.max(1, Math.ceil(dist / stepLen));
     for (let i = 0; i <= steps; i++) {
         const x = a.x + (b.x - a.x) * i / steps;
         const y = a.y + (b.y - a.y) * i / steps;
-        if (mazeType === 'pasillos') {           // salidas del pasillo: pasar de dentro a fuera
+        if (usesTube) {           // salidas del camino: pasar de dentro a fuera del trazo
             const inside = insideTube(x, y);
             if (t.inside === true && !inside) t.crossings++;
             t.inside = inside;
@@ -374,27 +375,52 @@ function traceMazeSegment(a, b, newStroke) {
     }
 }
 
-// --- Pasillos anchos: geometría y dibujo ---
+// --- Pasillos anchos y Senderos: geometría y dibujo ---
+// mazeSegs es una lista de polilíneas (cada una, una lista de puntos [x,y]): un tramo recto por
+// pasillo, o los puntos muestreados de una curva por sendero. Sirve por igual para dibujar y medir.
 function buildTubeGeometry() {
     const cw = CW / COLS, ch = CH / ROWS;
     mazeTube = Math.min(cw, ch) * 0.56;
     mazeSegs = [];
     mazeCells.forEach(cell => {
         const cx = (cell.c + 0.5) * cw, cy = (cell.r + 0.5) * ch;
-        if (!cell.w.r) mazeSegs.push([cx, cy, cx + cw, cy]);
-        if (!cell.w.b) mazeSegs.push([cx, cy, cx, cy + ch]);
+        if (!cell.w.r) mazeSegs.push([[cx, cy], [cx + cw, cy]]);
+        if (!cell.w.b) mazeSegs.push([[cx, cy], [cx, cy + ch]]);
     });
 }
 
-// ¿El punto está dentro de algún pasillo? (distancia al tramo más cercano ≤ mitad del ancho)
+function buildTrailGeometry() {
+    mazeTrailPos = trailPositions(mazeSeed, COLS, ROWS);
+    mazeTube = Math.min(CW / COLS, CH / ROWS) * 0.22;
+    mazeSegs = [];
+    mazeCells.forEach(cell => {
+        const i = cell.r * COLS + cell.c;
+        if (!cell.w.r) mazeSegs.push(curvePoints(mazeTrailPos[i], mazeTrailPos[i + 1], mazeSeed, i, 'r'));
+        if (!cell.w.b) mazeSegs.push(curvePoints(mazeTrailPos[i], mazeTrailPos[i + COLS], mazeSeed, i, 'b'));
+    });
+}
+
+// ¿El punto está dentro de algún tramo del trazo? (distancia a la polilínea más cercana ≤ mitad del ancho)
 function insideTube(x, y) {
     const h = mazeTube / 2;
-    for (const s of mazeSegs) {
-        const dx = s[2] - s[0], dy = s[3] - s[1];
-        const t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (y - s[1]) * dy) / (dx * dx + dy * dy)));
-        if (Math.hypot(x - (s[0] + t * dx), y - (s[1] + t * dy)) <= h) return true;
+    for (const poly of mazeSegs) {
+        for (let k = 0; k < poly.length - 1; k++) {
+            const [ax, ay] = poly[k], [bx, by] = poly[k + 1];
+            const dx = bx - ax, dy = by - ay;
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+            if (Math.hypot(x - (ax + t * dx), y - (ay + t * dy)) <= h) return true;
+        }
     }
     return false;
+}
+
+function strokePolylines(ctx) {
+    ctx.beginPath();
+    mazeSegs.forEach(poly => {
+        ctx.moveTo(poly[0][0], poly[0][1]);
+        for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k][0], poly[k][1]);
+    });
+    ctx.stroke();
 }
 
 function drawTubes(ctx, cw, ch) {
@@ -405,9 +431,7 @@ function drawTubes(ctx, cw, ch) {
     ctx.lineWidth = mazeTube;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.beginPath();
-    mazeSegs.forEach(s => { ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); });
-    ctx.stroke();
+    strokePolylines(ctx);
     ctx.fillStyle = '#10b981';
     ctx.beginPath();
     ctx.arc(cw * 0.5, ch * 0.5, mazeTube * 0.34, 0, Math.PI * 2);
@@ -419,6 +443,34 @@ function drawTubes(ctx, cw, ch) {
     ctx.restore();
 }
 
+function drawTrails(ctx) {
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = '#94a3b8';
+    mazeTrailPos.forEach(([x, y], i) => {
+        if (i === 0 || i === mazeTrailPos.length - 1) return;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = mazeTube;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokePolylines(ctx);
+    const a = mazeTrailPos[0], b = mazeTrailPos[mazeTrailPos.length - 1];
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(a[0], a[1], 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath();
+    ctx.arc(b[0], b[1], 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 function drawMaze() {
     const c = $('mazeCanvas');
     const ctx = c.getContext('2d');
@@ -426,6 +478,12 @@ function drawMaze() {
     const cw = c.width / COLS, ch = c.height / ROWS;
     if (mazeType === 'pasillos') {
         drawTubes(ctx, cw, ch);
+        mazeHasPath = false;
+        resetMazeTrace();
+        return;
+    }
+    if (mazeType === 'senderos') {
+        drawTrails(ctx);
         mazeHasPath = false;
         resetMazeTrace();
         return;
@@ -464,7 +522,9 @@ function applyMaze(seed, levelKey, typeKey) {
     const g = generateMaze(seed, levelKey, typeKey);
     mazeCells = g.cells;
     mazeInfo = g.info;
-    if (typeKey === 'pasillos') buildTubeGeometry(); else { mazeSegs = []; mazeTube = 0; }
+    if (typeKey === 'pasillos') buildTubeGeometry();
+    else if (typeKey === 'senderos') buildTrailGeometry();
+    else { mazeSegs = []; mazeTube = 0; mazeTrailPos = null; }
     $('maze-info').textContent = `Tipo ${MAZE_TYPES[typeKey].label} · Dificultad ${cfg.label} · Laberinto Nº ${seed} · Recorrido óptimo: ${g.info.length} celdas · Bifurcaciones en ese recorrido: ${g.info.junctions}`;
     drawMaze();
 }
@@ -487,7 +547,7 @@ function initMazeCanvas() {
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.lineWidth = parseFloat($('maze-size').value) * 1.5;
-            ctx.strokeStyle = mazeType === 'pasillos' ? '#7c3aed' : '#2563eb';
+            ctx.strokeStyle = mazeType === 'pasillos' ? '#7c3aed' : mazeType === 'senderos' ? '#ea580c' : '#2563eb';
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -503,7 +563,7 @@ function mazeTraceMeta(d) {
     const t = d.trace;
     if (!t || !t.cells) return 'Recorrido del participante: sin trazo registrado';
     const diff = t.cells - d.optimal;
-    return `Recorrido del participante: ${t.cells} celdas (${diff >= 0 ? '+' : ''}${diff} respecto al óptimo de ${d.optimal}) | Celdas distintas: ${t.distinct} | ${d.typeKey === 'pasillos' ? 'Salidas del pasillo' : 'Cruces de pared'}: ${t.crossings} | Llegó a la salida: ${t.reachedExit ? 'sí' : 'no'}`;
+    return `Recorrido del participante: ${t.cells} celdas (${diff >= 0 ? '+' : ''}${diff} respecto al óptimo de ${d.optimal}) | Celdas distintas: ${t.distinct} | ${d.exitLabel || 'Cruces de pared'}: ${t.crossings} | Llegó a la salida: ${t.reachedExit ? 'sí' : 'no'}`;
 }
 
 function mazeMeta(d) {
@@ -726,6 +786,7 @@ function saveTestResult(type) {
         testData.maze.seed = mazeSeed;
         testData.maze.type = MAZE_TYPES[mazeType].label;
         testData.maze.typeKey = mazeType;
+        testData.maze.exitLabel = MAZE_TYPES[mazeType].exitLabel;
         testData.maze.level = mazeCfg(mazeType, mazeLevel).label;
         testData.maze.optimal = mazeInfo.length;
         testData.maze.trace = {
