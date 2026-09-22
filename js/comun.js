@@ -40,9 +40,9 @@ const MAZE_TYPES = {
     pasillos: {
         label: 'Pasillos anchos',
         levels: {
-            facil:   { label: 'Fácil',   cols: 6,  rows: 4, loops: 0, ratio: [1.4, 2.4], minJunctions: 1 },
-            media:   { label: 'Media',   cols: 8,  rows: 5, loops: 0, ratio: [1.7, 2.7], minJunctions: 2 },
-            dificil: { label: 'Difícil', cols: 10, rows: 6, loops: 0, ratio: [2.0, 3.0], minJunctions: 3 }
+            facil:   { label: 'Fácil',   cols: 9,  rows: 5, loops: 1, ratio: [2.0, 3.0], minJunctions: 3 },
+            media:   { label: 'Media',   cols: 12, rows: 7, loops: 1, ratio: [2.8, 3.8], minJunctions: 6 },
+            dificil: { label: 'Difícil', cols: 15, rows: 9, loops: 2, ratio: [3.6, 5.0], minJunctions: 9 }
         }
     }
 };
