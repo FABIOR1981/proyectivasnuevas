@@ -13,7 +13,7 @@ Consta de **dos páginas independientes**:
 
 | Documento | Para quién | Formato |
 |---|---|---|
-| Manual de Usuario | El profesional que configura y administra las pruebas | [Markdown](documentacion/MANUAL_USUARIO.md) · [PDF](documentacion/Manual_Usuario.pdf) |
+| Manual de Usuario | El profesional que configura y administra las pruebas | [Markdown](https://github.com/FABIOR1981/documentacion-central/blob/main/proyectivasnuevas/documentacion/MANUAL_USUARIO.md) · [PDF](https://github.com/FABIOR1981/documentacion-central/blob/main/proyectivasnuevas/documentacion/Manual_Usuario.pdf) |
 
 ## Pruebas incluidas
 
