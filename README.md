@@ -9,6 +9,12 @@ Consta de **dos páginas independientes**:
 | `configuracion.html` | El evaluador | Define los parámetros de la evaluación, gestiona perfiles y deja una configuración activa |
 | `index.html` | El evaluado / la administración de las pruebas | Registra al evaluado, administra las pruebas y genera el informe. No permite cambiar la configuración |
 
+## Documentación
+
+| Documento | Para quién | Formato |
+|---|---|---|
+| Manual de Usuario | El profesional que configura y administra las pruebas | [Markdown](documentacion/MANUAL_USUARIO.md) · [PDF](documentacion/Manual_Usuario.pdf) |
+
 ## Pruebas incluidas
 
 | Prueba | Qué registra |
